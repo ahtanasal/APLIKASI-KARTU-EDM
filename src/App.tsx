@@ -846,7 +846,7 @@ export default function App() {
             <div className="p-8">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden border border-stone-100">
-                  <img src="/src/assets/front_logo.png" alt="Cong De Logo" className="w-8 h-8 object-contain" />
+                  <img src="/images/front_logo.png" alt="Cong De Logo" className="w-8 h-8 object-contain" />
                 </div>
                 <div>
                   <h1 className="font-serif text-base font-bold leading-none">Eka Dharma Manggala</h1>
@@ -922,7 +922,7 @@ export default function App() {
               <Menu size={24} />
             </button>
             <div className="flex items-center gap-2">
-              <img src="/src/assets/front_logo.png" alt="Logo" className="w-6 h-6 object-contain" />
+              <img src="/images/front_logo.png" alt="Logo" className="w-6 h-6 object-contain" />
               <span className="font-serif font-bold text-stone-800 text-sm">Eka Dharma Manggala</span>
             </div>
             <div className="w-10" />
@@ -1705,7 +1705,7 @@ function LandingPage({ onNavigate }: { onNavigate: (tab: 'list' | 'input' | 'des
         <div 
           className="absolute inset-0 opacity-20 contrast-125 mix-blend-multiply"
           style={{ 
-            backgroundImage: 'url(/src/assets/JiGong_3.jpeg)', 
+            backgroundImage: 'url(/images/JiGong_3.jpeg)', 
             backgroundSize: 'cover', 
             backgroundPosition: 'center' 
           }}
@@ -1725,7 +1725,7 @@ function LandingPage({ onNavigate }: { onNavigate: (tab: 'list' | 'input' | 'des
           <div className="flex justify-center mb-8">
             <div className="relative p-2 rounded-full border-2 border-temple-gold/20 animate-pulse">
               <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-full flex items-center justify-center shadow-2xl overflow-hidden border border-stone-200">
-                <img src="/src/assets/front_logo.png" alt="Cong De Logo" className="w-20 h-20 md:w-28 md:h-28 object-contain" />
+                <img src="/images/front_logo.png" alt="Cong De Logo" className="w-20 h-20 md:w-28 md:h-28 object-contain" />
               </div>
               {/* Decorative elements */}
               <div className="absolute -top-2 -left-2 w-6 h-6 border-t-2 border-l-2 border-temple-gold" />

@@ -33,8 +33,8 @@ const defaultFields: CardField[] = [
 ];
 
 const defaultSettings: CardDesignSettings = {
-  frontBg: '/src/assets/front_logo.png',
-  backBg: '/src/assets/JiGong-12.jpeg',
+  frontBg: '/images/front_logo.png',
+  backBg: '/images/JiGong-12.jpeg',
   qrPosition: 'bottom-right',
   showNameOnBack: false,
   frontLogoOpacity: 0.9,

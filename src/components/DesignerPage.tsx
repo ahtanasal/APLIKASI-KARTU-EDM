@@ -41,15 +41,15 @@ const SAMPLE_DATA: Umat = {
 };
 
 const BACK_IMAGES = [
-  { id: 'jigong-12', url: '/src/assets/JiGong-12.jpeg', label: 'Ji Gong 12' },
-  { id: 'jigong-11', url: '/src/assets/JiGong-11.jpeg', label: 'Ji Gong 11' },
-  { id: 'jigong-10', url: '/src/assets/JiGong-10.jpeg', label: 'Ji Gong 10' },
-  { id: 'jigong-9', url: '/src/assets/JiGong_9.jpeg', label: 'Ji Gong 9' },
-  { id: 'jigong-8', url: '/src/assets/JiGong-8.jpeg', label: 'Ji Gong 8' },
-  { id: 'jigong-7', url: '/src/assets/JiGong-7.jpeg', label: 'Ji Gong 7' },
-  { id: 'jigong-6', url: '/src/assets/JiGong-6.jpeg', label: 'Ji Gong 6' },
-  { id: 'jigong-4', url: '/src/assets/JiGong_4-1.jpeg', label: 'Ji Gong 4' },
-  { id: 'jigong-5', url: '/src/assets/Jigong_5.jpeg', label: 'Ji Gong 5' },
+  { id: 'jigong-12', url: '/images/JiGong-12.jpeg', label: 'Ji Gong 12' },
+  { id: 'jigong-11', url: '/images/JiGong-11.jpeg', label: 'Ji Gong 11' },
+  { id: 'jigong-10', url: '/images/JiGong-10.jpeg', label: 'Ji Gong 10' },
+  { id: 'jigong-9', url: '/images/JiGong_9.jpeg', label: 'Ji Gong 9' },
+  { id: 'jigong-8', url: '/images/JiGong-8.jpeg', label: 'Ji Gong 8' },
+  { id: 'jigong-7', url: '/images/JiGong-7.jpeg', label: 'Ji Gong 7' },
+  { id: 'jigong-6', url: '/images/JiGong-6.jpeg', label: 'Ji Gong 6' },
+  { id: 'jigong-4', url: '/images/JiGong_4-1.jpeg', label: 'Ji Gong 4' },
+  { id: 'jigong-5', url: '/images/Jigong_5.jpeg', label: 'Ji Gong 5' },
 ];
 
 const QR_POSITIONS: { value: QRCodePosition; label: string }[] = [
@@ -132,7 +132,7 @@ export function DesignerPage() {
               <div className="flex items-center gap-2">
                 {settings.frontBg.startsWith('data:image') && (
                   <button
-                    onClick={() => updateSettings({ frontBg: '/src/assets/front_logo.png' })}
+                    onClick={() => updateSettings({ frontBg: '/images/front_logo.png' })}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-[10px] font-bold hover:bg-red-100 transition-colors border border-red-100"
                   >
                     <Trash2 size={14} />

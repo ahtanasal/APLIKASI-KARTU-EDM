@@ -146,7 +146,7 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
       )}>
         {/* Logo container aligned with Label column (30%) */}
         <div className="w-[30%] flex items-center justify-center h-full">
-          <img src="/src/assets/front_logo.png" alt="Logo" className="w-7 h-7 object-contain opacity-90" />
+          <img src="/images/front_logo.png" alt="Logo" className="w-7 h-7 object-contain opacity-90" />
         </div>
         {/* Text container aligned with Value column (70%) */}
         <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-0.5">
@@ -507,6 +507,105 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
   label, chLabel, value, subValue, isLast = false, isCentered = false, isLarge = false, isMasehi = false, forceSmall = false, isSingleLineOnly = false 
 }) => {
   const isDate = isMasehi; 
+  const valLen = value ? value.length : 0;
+  const subValLen = subValue ? subValue.length : 0;
+
+  // Determine dynamic font size for the value
+  let dynamicValueFontSize = '12px';
+  if (isSingleLineOnly) {
+    if (valLen > 25) {
+      dynamicValueFontSize = '7.5px';
+    } else if (valLen > 20) {
+      dynamicValueFontSize = '8.5px';
+    } else if (valLen > 15) {
+      dynamicValueFontSize = '9.5px';
+    } else if (valLen > 10) {
+      dynamicValueFontSize = '10.5px';
+    } else {
+      dynamicValueFontSize = '11.5px';
+    }
+  } else if (isDate) {
+    const lines = value ? value.split('\n') : [];
+    const maxLineLen = lines.reduce((max, line) => Math.max(max, line.length), 0);
+    if (maxLineLen > 25) {
+      dynamicValueFontSize = forceSmall ? '8px' : '9px';
+    } else if (maxLineLen > 18) {
+      dynamicValueFontSize = forceSmall ? '9.5px' : '10.5px';
+    } else if (maxLineLen > 12) {
+      dynamicValueFontSize = forceSmall ? '10.5px' : '11.5px';
+    } else {
+      dynamicValueFontSize = forceSmall ? '11.5px' : '12.5px';
+    }
+  } else if (isLarge) {
+    // Specifically for Nama or prominent fields
+    if (valLen <= 3) {
+      dynamicValueFontSize = forceSmall ? '16px' : '17px';
+    } else if (valLen <= 6) {
+      dynamicValueFontSize = forceSmall ? '14.5px' : '15.5px';
+    } else if (valLen <= 10) {
+      dynamicValueFontSize = forceSmall ? '13px' : '14px';
+    } else if (valLen <= 15) {
+      dynamicValueFontSize = forceSmall ? '11.5px' : '12.5px';
+    } else if (valLen <= 20) {
+      dynamicValueFontSize = forceSmall ? '10px' : '11px';
+    } else if (valLen <= 25) {
+      dynamicValueFontSize = forceSmall ? '8.5px' : '9.5px';
+    } else {
+      dynamicValueFontSize = forceSmall ? '7.5px' : '8.5px';
+    }
+  } else {
+    // Other smaller fields
+    if (valLen <= 4) {
+      dynamicValueFontSize = forceSmall ? '13px' : '14px';
+    } else if (valLen <= 8) {
+      dynamicValueFontSize = forceSmall ? '12px' : '13px';
+    } else if (valLen <= 14) {
+      dynamicValueFontSize = forceSmall ? '11px' : '12px';
+    } else if (valLen <= 20) {
+      dynamicValueFontSize = forceSmall ? '9.5px' : '10.5px';
+    } else {
+      dynamicValueFontSize = forceSmall ? '8px' : '9px';
+    }
+  }
+
+  // Determine dynamic font size for the subValue (usually Chinese block/pinyin text)
+  let dynamicSubValueFontSize = '10px';
+  if (subValue) {
+    if (isSingleLineOnly) {
+      if (subValLen > 25) {
+        dynamicSubValueFontSize = '7px';
+      } else if (subValLen > 20) {
+        dynamicSubValueFontSize = '8px';
+      } else if (subValLen > 15) {
+        dynamicSubValueFontSize = '9px';
+      } else {
+        dynamicSubValueFontSize = '10px';
+      }
+    } else if (isLarge) {
+      if (subValLen <= 4) {
+        dynamicSubValueFontSize = forceSmall ? '12.5px' : '13.5px';
+      } else if (subValLen <= 8) {
+        dynamicSubValueFontSize = forceSmall ? '11px' : '12px';
+      } else if (subValLen <= 14) {
+        dynamicSubValueFontSize = forceSmall ? '9.5px' : '10.5px';
+      } else if (subValLen <= 20) {
+        dynamicSubValueFontSize = forceSmall ? '8.5px' : '9.5px';
+      } else {
+        dynamicSubValueFontSize = forceSmall ? '7.5px' : '8.5px';
+      }
+    } else {
+      if (subValLen <= 6) {
+        dynamicSubValueFontSize = forceSmall ? '10px' : '11px';
+      } else if (subValLen <= 12) {
+        dynamicSubValueFontSize = forceSmall ? '9px' : '10px';
+      } else if (subValLen <= 18) {
+        dynamicSubValueFontSize = forceSmall ? '8px' : '9px';
+      } else {
+        dynamicSubValueFontSize = forceSmall ? '7px' : '8px';
+      }
+    }
+  }
+
   return (
     <div className={cn(
       "flex flex-1 items-stretch min-h-0",
@@ -538,44 +637,26 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
       
       {/* Value Box */}
       <div className={cn("flex-1 flex flex-col justify-center min-w-0 bg-white/10", forceSmall ? "px-1 py-0" : "px-1.5 py-0.5")}>
-        <p className={cn(
-          "font-bold text-black leading-tight uppercase",
-          isCentered && "text-center",
-          isSingleLineOnly ? "whitespace-nowrap" : "whitespace-pre-wrap"
-        )}
-        style={{
-          fontSize: isSingleLineOnly 
-            ? (value.length > 25 ? '7.5px' : value.length > 20 ? '8.5px' : value.length > 15 ? '10px' : '11.5px')
-            : isDate 
-              ? (forceSmall ? '11.5px' : '12.5px')
-              : (value && value.length > 20)
-                ? (forceSmall ? '10px' : '11px')
-                : (value && value.length > 15)
-                  ? (forceSmall ? '11.5px' : '12.5px')
-                  : isLarge
-                    ? (forceSmall ? '13.5px' : '14.5px')
-                    : (forceSmall ? '12px' : '13px')
-        }}>
+        <p 
+          className={cn(
+            "font-bold text-black leading-tight uppercase animate-fade-in",
+            isCentered && "text-center",
+            isSingleLineOnly ? "whitespace-nowrap" : "whitespace-pre-wrap"
+          )}
+          style={{ fontSize: dynamicValueFontSize }}
+        >
           {value || '-'}
         </p>
         {subValue && (
-          <p className={cn(
-            "font-sans font-bold text-black leading-tight uppercase",
-            isCentered && "text-center",
-            isSingleLineOnly ? "whitespace-nowrap" : "whitespace-nowrap truncate",
-            forceSmall ? "mt-0" : "mt-0.5"
-          )}
-          style={{
-            fontSize: isSingleLineOnly
-              ? (subValue.length > 25 ? '7px' : subValue.length > 20 ? '8px' : subValue.length > 15 ? '9px' : '10px')
-              : (subValue.length > 25)
-                ? (forceSmall ? '7.5px' : '8.5px')
-                : (subValue.length > 20)
-                  ? (forceSmall ? '8.5px' : '9.5px')
-                  : isLarge
-                    ? (forceSmall ? '10px' : '11px')
-                    : (forceSmall ? '9px' : '10px')
-          }}>
+          <p 
+            className={cn(
+              "font-sans font-bold text-black leading-tight uppercase animate-fade-in",
+              isCentered && "text-center",
+              isSingleLineOnly ? "whitespace-nowrap" : "whitespace-pre-wrap",
+              forceSmall ? "mt-0" : "mt-0.5"
+            )}
+            style={{ fontSize: dynamicSubValueFontSize }}
+          >
             {subValue}
           </p>
         )}
