@@ -1,7 +1,7 @@
 {
   "definitions": {
     "firestore": {
-      "rules": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /umats/{umatId} {\n      allow read, write: if true;\n    }\n    match /design_settings/{settingsId} {\n      allow read, write: if true;\n    }\n  }\n}"
+      "rules": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /umats/{umatId} {\n      allow read, write: if true;\n    }\n    match /metadata/{metadataId} {\n      allow read, write: if true;\n    }\n    match /design_settings/{settingsId} {\n      allow read, write: if true;\n    }\n  }\n}"
     }
   }
 }

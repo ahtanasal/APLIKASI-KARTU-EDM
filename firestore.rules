@@ -4,6 +4,9 @@ service cloud.firestore {
     match /umats/{umatId} {
       allow read, write: if true;
     }
+    match /metadata/{metadataId} {
+      allow read, write: if true;
+    }
     match /design_settings/{settingsId} {
       allow read, write: if true;
     }

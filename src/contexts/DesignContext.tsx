@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Umat } from '../types';
+import { db } from '../lib/firebase';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
 export type QRCodePosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'bottom-center';
 
@@ -34,8 +36,8 @@ const defaultFields: CardField[] = [
 
 const defaultSettings: CardDesignSettings = {
   frontBg: '/images/front_logo.png',
-  backBg: '/images/JiGong-12.jpeg',
-  qrPosition: 'bottom-right',
+  backBg: '/images/JiGong-6.jpeg',
+  qrPosition: 'bottom-left',
   showNameOnBack: false,
   frontLogoOpacity: 0.9,
   fields: defaultFields,
@@ -62,17 +64,46 @@ export const DesignProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return defaultSettings;
   });
 
-  const updateSettings = (newSettings: Partial<CardDesignSettings>) => {
+  // Real-time remote settings synchronization
+  useEffect(() => {
+    const unsubscribe = onSnapshot(doc(db, 'design_settings', 'main'), (snapshot) => {
+      if (snapshot.exists()) {
+        const remoteSettings = snapshot.data() as CardDesignSettings;
+        setSettings(remoteSettings);
+      } else {
+        // Seed remote settings if first time
+        setDoc(doc(db, 'design_settings', 'main'), defaultSettings);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const updateSettings = async (newSettings: Partial<CardDesignSettings>) => {
     setSettings(prev => {
       const updated = { ...prev, ...newSettings };
-      localStorage.setItem('edm_card_design', JSON.stringify(updated));
+      try {
+        localStorage.setItem('edm_card_design', JSON.stringify(updated));
+      } catch (e) {}
+      
+      // Publish update to Firestore
+      setDoc(doc(db, 'design_settings', 'main'), updated).catch(e => {
+        console.error('Failed to update design settings in Firestore', e);
+      });
+      
       return updated;
     });
   };
 
-  const resetSettings = () => {
+  const resetSettings = async () => {
     setSettings(defaultSettings);
-    localStorage.removeItem('edm_card_design');
+    try {
+      localStorage.removeItem('edm_card_design');
+    } catch (e) {}
+    try {
+      await setDoc(doc(db, 'design_settings', 'main'), defaultSettings);
+    } catch (e) {
+      console.error('Failed to reset design settings in Firestore', e);
+    }
   };
 
   return (
