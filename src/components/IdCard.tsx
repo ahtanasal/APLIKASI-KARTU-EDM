@@ -116,9 +116,10 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
       backgroundSize: '95%',
       backgroundPosition: 'center 55%',
       backgroundRepeat: 'no-repeat',
+      colorScheme: 'light',
     }}
     className={cn(
-      "relative bg-[#fff1f2] overflow-hidden border-[1px] border-rose-200",
+      "relative bg-[#fff1f2] overflow-hidden border-[1px] border-rose-200 text-slate-900 select-none",
       !forceSmall && "shadow-md"
     )}
   >
@@ -215,9 +216,10 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
     style={{ 
       width: '54mm', 
       height: '85mm',
+      colorScheme: 'light',
     }}
     className={cn(
-      "relative bg-[#fff1f2] overflow-hidden border-[1px] border-rose-200",
+      "relative bg-[#fff1f2] overflow-hidden border-[1px] border-rose-200 text-slate-900 select-none",
       !forceSmall && "shadow-md"
     )}
   >
@@ -512,32 +514,8 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
 
   // Determine dynamic font size for the value
   let dynamicValueFontSize = '12px';
-  if (isSingleLineOnly) {
-    if (valLen > 25) {
-      dynamicValueFontSize = '7.5px';
-    } else if (valLen > 20) {
-      dynamicValueFontSize = '8.5px';
-    } else if (valLen > 15) {
-      dynamicValueFontSize = '9.5px';
-    } else if (valLen > 10) {
-      dynamicValueFontSize = '10.5px';
-    } else {
-      dynamicValueFontSize = '11.5px';
-    }
-  } else if (isDate) {
-    const lines = value ? value.split('\n') : [];
-    const maxLineLen = lines.reduce((max, line) => Math.max(max, line.length), 0);
-    if (maxLineLen > 25) {
-      dynamicValueFontSize = forceSmall ? '8px' : '9px';
-    } else if (maxLineLen > 18) {
-      dynamicValueFontSize = forceSmall ? '9.5px' : '10.5px';
-    } else if (maxLineLen > 12) {
-      dynamicValueFontSize = forceSmall ? '10.5px' : '11.5px';
-    } else {
-      dynamicValueFontSize = forceSmall ? '11.5px' : '12.5px';
-    }
-  } else if (isLarge) {
-    // Specifically for Nama or prominent fields
+  if (isSingleLineOnly || isLarge) {
+    // Specifically for Nama, Vihara, or other prominent fields
     if (valLen <= 3) {
       dynamicValueFontSize = forceSmall ? '16px' : '17px';
     } else if (valLen <= 6) {
@@ -552,6 +530,18 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
       dynamicValueFontSize = forceSmall ? '8.5px' : '9.5px';
     } else {
       dynamicValueFontSize = forceSmall ? '7.5px' : '8.5px';
+    }
+  } else if (isDate) {
+    const lines = value ? value.split('\n') : [];
+    const maxLineLen = lines.reduce((max, line) => Math.max(max, line.length), 0);
+    if (maxLineLen > 25) {
+      dynamicValueFontSize = forceSmall ? '8px' : '9px';
+    } else if (maxLineLen > 18) {
+      dynamicValueFontSize = forceSmall ? '9.5px' : '10.5px';
+    } else if (maxLineLen > 12) {
+      dynamicValueFontSize = forceSmall ? '10.5px' : '11.5px';
+    } else {
+      dynamicValueFontSize = forceSmall ? '11.5px' : '12.5px';
     }
   } else {
     // Other smaller fields
@@ -571,17 +561,7 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
   // Determine dynamic font size for the subValue (usually Chinese block/pinyin text)
   let dynamicSubValueFontSize = '10px';
   if (subValue) {
-    if (isSingleLineOnly) {
-      if (subValLen > 25) {
-        dynamicSubValueFontSize = '7px';
-      } else if (subValLen > 20) {
-        dynamicSubValueFontSize = '8px';
-      } else if (subValLen > 15) {
-        dynamicSubValueFontSize = '9px';
-      } else {
-        dynamicSubValueFontSize = '10px';
-      }
-    } else if (isLarge) {
+    if (isSingleLineOnly || isLarge) {
       if (subValLen <= 4) {
         dynamicSubValueFontSize = forceSmall ? '12.5px' : '13.5px';
       } else if (subValLen <= 8) {
@@ -605,6 +585,9 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
       }
     }
   }
+
+  const hasChineseValue = value ? /[\u4e00-\u9fa5]/.test(value) : false;
+  const hasChineseSubValue = subValue ? /[\u4e00-\u9fa5]/.test(subValue) : false;
 
   return (
     <div className={cn(
@@ -639,9 +622,10 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
       <div className={cn("flex-1 flex flex-col justify-center min-w-0 bg-white/10", forceSmall ? "px-1 py-0" : "px-1.5 py-0.5")}>
         <p 
           className={cn(
-            "font-bold text-black leading-tight uppercase animate-fade-in",
+            "text-black leading-tight uppercase animate-fade-in",
+            hasChineseValue ? "font-dfkai font-black" : "font-sans font-bold",
             isCentered && "text-center",
-            isSingleLineOnly ? "whitespace-nowrap" : "whitespace-pre-wrap"
+            isSingleLineOnly ? "whitespace-nowrap overflow-hidden text-ellipsis" : "whitespace-pre-wrap"
           )}
           style={{ fontSize: dynamicValueFontSize }}
         >
@@ -650,9 +634,10 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
         {subValue && (
           <p 
             className={cn(
-              "font-sans font-bold text-black leading-tight uppercase animate-fade-in",
+              "text-black leading-tight uppercase animate-fade-in",
+              hasChineseSubValue ? "font-dfkai font-black" : "font-sans font-bold",
               isCentered && "text-center",
-              isSingleLineOnly ? "whitespace-nowrap" : "whitespace-pre-wrap",
+              isSingleLineOnly ? "whitespace-nowrap overflow-hidden text-ellipsis" : "whitespace-pre-wrap",
               forceSmall ? "mt-0" : "mt-0.5"
             )}
             style={{ fontSize: dynamicSubValueFontSize }}
