@@ -201,7 +201,7 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
               isMasehi={fieldId === 'date'}
               isLast={idx === arr.length - 1}
               forceSmall={true}
-              isSingleLineOnly={fieldId === 'vihara'}
+              isSingleLineOnly={fieldId !== 'date'}
             />
           );
         })}
@@ -528,8 +528,10 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
       dynamicValueFontSize = forceSmall ? '10px' : '11px';
     } else if (valLen <= 25) {
       dynamicValueFontSize = forceSmall ? '8.5px' : '9.5px';
-    } else {
+    } else if (valLen <= 30) {
       dynamicValueFontSize = forceSmall ? '7.5px' : '8.5px';
+    } else {
+      dynamicValueFontSize = forceSmall ? '6.5px' : '7.5px';
     }
   } else if (isDate) {
     const lines = value ? value.split('\n') : [];
@@ -570,8 +572,10 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
         dynamicSubValueFontSize = forceSmall ? '9.5px' : '10.5px';
       } else if (subValLen <= 20) {
         dynamicSubValueFontSize = forceSmall ? '8.5px' : '9.5px';
-      } else {
+      } else if (subValLen <= 28) {
         dynamicSubValueFontSize = forceSmall ? '7.5px' : '8.5px';
+      } else {
+        dynamicSubValueFontSize = forceSmall ? '6.5px' : '7.5px';
       }
     } else {
       if (subValLen <= 6) {

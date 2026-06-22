@@ -250,6 +250,18 @@ export const BatchEditor: React.FC<BatchEditorProps> = ({
             const matched = findPinyinMatchInDrafts(formatVihara, id);
             if (matched) {
               newUmat.viharaPinyin = matched.toUpperCase();
+            } else if (!newUmat.viharaPinyin || !newUmat.viharaPinyin.trim()) {
+              const hasChinese = /[\u4e00-\u9fa5]/.test(formatVihara);
+              if (hasChinese) {
+                try {
+                  const py = pinyin(formatVihara, { toneType: 'none' });
+                  if (py) {
+                    newUmat.viharaPinyin = py.toUpperCase();
+                  }
+                } catch(e) {
+                  console.error("Auto pinyin failed for vihara", e);
+                }
+              }
             }
           }
         }
@@ -510,9 +522,9 @@ export const BatchEditor: React.FC<BatchEditorProps> = ({
             <table className="w-full text-left border-collapse table-fixed select-text">
               <thead>
                 <tr className="bg-stone-50/70 border-b border-stone-100">
-                  <th className="w-12 text-center text-[10px] uppercase tracking-wider text-stone-400 font-bold py-3 px-2 sticky left-0 bg-stone-100 z-20 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">No</th>
-                  <th className="w-44 text-[10px] uppercase tracking-wider text-stone-400 font-bold py-3 px-2 sticky left-12 bg-stone-100 z-20 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">Nama Indonesia</th>
-                  <th className="w-32 text-[10px] uppercase tracking-wider text-stone-400 font-bold py-3 px-2 sticky left-[224px] bg-stone-100 z-20 border-r-2 border-stone-200 shadow-[4px_0_8px_rgba(0,0,0,0.06)]">No. ID</th>
+                  <th className="w-32 text-[10px] uppercase tracking-wider text-stone-400 font-bold py-3 px-2 sticky left-0 bg-stone-100 z-20 border-r-2 border-stone-200 shadow-[4px_0_8px_rgba(0,0,0,0.06)]">No. ID</th>
+                  <th className="w-12 text-center text-[10px] uppercase tracking-wider text-stone-400 font-bold py-3 px-2">No</th>
+                  <th className="w-44 text-[10px] uppercase tracking-wider text-stone-400 font-bold py-3 px-2">Nama Indonesia</th>
                   <th className="w-44 text-[10px] uppercase tracking-wider text-stone-400 font-bold py-3 px-2">NAMA PEMOHON TAO <span className="text-red-500 font-bold">*</span></th>
                   <th className="w-36 text-[10px] uppercase tracking-wider text-stone-400 font-bold py-3 px-2">Nama Pinyin</th>
                   <th className="w-40 text-[10px] uppercase tracking-wider text-stone-400 font-bold py-3 px-2">Vihara</th>
@@ -543,28 +555,8 @@ export const BatchEditor: React.FC<BatchEditorProps> = ({
                         isRowIncomplete ? 'bg-[#faf8f5]' : 'bg-white'
                       }`}
                     >
-                      {/* Sticky Number Index */}
-                      <td className={`text-center text-xs font-semibold py-2 px-2 sticky left-0 text-stone-500 leading-normal z-10 font-mono shadow-[2px_0_5px_rgba(0,0,0,0.02)] ${
-                        isRowIncomplete ? 'bg-[#faf8f5]' : 'bg-white'
-                      } group-hover:bg-[#f5f1ea]`}>
-                        {globalIdx}
-                      </td>
-
-                      {/* Sticky Nama Indonesia (Required field, EDITABLE) */}
-                      <td className={`py-2 px-2 sticky left-12 z-10 ${
-                        isRowIncomplete ? 'bg-[#faf8f5]' : 'bg-white'
-                      } group-hover:bg-[#f5f1ea]`}>
-                        <input 
-                          type="text" 
-                          value={u.namaIndonesia || ''} 
-                          placeholder="NAMA LENGKAP"
-                          onChange={(e) => handleCellChange(u.id || '', 'namaIndonesia', e.target.value)}
-                          className="w-full bg-transparent border-none text-xs font-bold text-stone-900 focus:bg-stone-100 focus:outline-none focus:ring-1 focus:ring-amber-500 rounded-md px-1.5 py-1 uppercase"
-                        />
-                      </td>
-
                       {/* Sticky No. ID (LOCKED / READ-ONLY) */}
-                      <td className={`py-1 px-1 sticky left-[224px] z-10 border-r-2 border-stone-200 shadow-[4px_0_8px_rgba(0,0,0,0.06)] ${
+                      <td className={`py-1 px-1 sticky left-0 z-10 border-r-2 border-stone-200 shadow-[4px_0_8px_rgba(0,0,0,0.06)] ${
                         isRowIncomplete ? 'bg-[#faf8f5]' : 'bg-white'
                       } group-hover:bg-[#f5f1ea]`}>
                         <input 
@@ -574,6 +566,22 @@ export const BatchEditor: React.FC<BatchEditorProps> = ({
                           readOnly
                           className="w-full bg-stone-100/60 border border-transparent text-xs font-mono font-bold text-stone-500 select-all rounded-md px-1.5 py-1 uppercase cursor-not-allowed"
                           title="No ID dikunci (tidak dapat diubah)"
+                        />
+                      </td>
+
+                      {/* Number Index */}
+                      <td className="text-center text-xs font-semibold py-2 px-2 text-stone-500 leading-normal font-mono">
+                        {globalIdx}
+                      </td>
+
+                      {/* Nama Indonesia (Required field, EDITABLE) */}
+                      <td className="py-2 px-2">
+                        <input 
+                          type="text" 
+                          value={u.namaIndonesia || ''} 
+                          placeholder="NAMA LENGKAP"
+                          onChange={(e) => handleCellChange(u.id || '', 'namaIndonesia', e.target.value)}
+                          className="w-full bg-transparent border-none text-xs font-bold text-stone-900 focus:bg-stone-100 focus:outline-none focus:ring-1 focus:ring-amber-500 rounded-md px-1.5 py-1 uppercase"
                         />
                       </td>
 
