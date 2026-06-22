@@ -1,0 +1,8 @@
+{
+  "name": "Eka Dharma Manggala Portal",
+  "description": "Sistem manajemen data umat Vihara Eka Dharma Manggala Samarinda",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
