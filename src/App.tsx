@@ -62,6 +62,14 @@ import type { UmatInput, Umat } from './types';
 import { IdCard } from './components/IdCard';
 import { DesignerPage } from './components/DesignerPage';
 import { BatchEditor } from './components/BatchEditor';
+import { db } from './lib/firebase';
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  deleteDoc, 
+  onSnapshot
+} from 'firebase/firestore';
 
 const SHI_CHEN = [
   { label: 'ZI (子时) (23:00-01:00)', value: 'ZI (子时) (23:00-01:00)' },
@@ -135,99 +143,99 @@ export default function App() {
   const [masterViharas, setMasterViharas] = useState<{name: string, pinyin: string}[]>([]);
   const [masterPanditas, setMasterPanditas] = useState<{name: string, pinyin: string}[]>([]);
 
-  // Load from localStorage as fallback for now
+  // Clean real-time Firestore synchronization
   useEffect(() => {
-    const saved = localStorage.getItem('edm_umats');
-    
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          // Migration: Ensure every entry has an ID and createdAt, and handle new date fields
-          const migrated = parsed.map(u => {
-            let masehi = u.tanggalMasehi || u.tanggal || '';
-            // If it's a full ISO string, extract just the date part
-            if (masehi.includes('T')) {
-              masehi = masehi.split('T')[0];
+    // 1. Sync Umats from Firestore in real-time
+    const unsubscribeUmats = onSnapshot(collection(db, 'umats'), (snapshot) => {
+      const list: Umat[] = [];
+      snapshot.forEach((doc) => {
+        list.push(doc.data() as Umat);
+      });
+      list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      
+      // If Firestore is completely empty but the user has data in localStorage,
+      // upload their local data to Firestore to migrate smoothly!
+      if (list.length === 0) {
+        const localSaved = localStorage.getItem('edm_umats');
+        if (localSaved) {
+          try {
+            const parsed = JSON.parse(localSaved);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              console.log("Migrating local data to remote Firestore...", parsed.length);
+              const migrated = parsed.map(u => ({
+                ...u,
+                id: u.id || generateId(),
+                createdAt: u.createdAt || new Date().toISOString()
+              }));
+              // Batch write helper
+              migrated.forEach(async (u) => {
+                await setDoc(doc(db, 'umats', u.id), u);
+              });
+              return;
             }
-            
-            // If it's in yyyy-MM-dd, convert to dd-mm-yyyy
-            if (masehi && masehi.includes('-')) {
-              const parts = masehi.split('-');
-              if (parts[0].length === 4) {
-                masehi = `${parts[2]}-${parts[1]}-${parts[0]}`;
-              }
-            }
-
-            return {
-              ...u,
-              id: u.id || generateId(),
-              tanggalMasehi: masehi,
-              tanggalLunar: u.tanggalLunar || u.tanggalText || '',
-              jabatanSuci: u.jabatanSuci || u.jabatanLangit || '',
-              createdAt: u.createdAt || new Date().toISOString()
-            };
-          });
-          
-          setUmats(migrated);
-          
-          // Save back if migrated
-          if (JSON.stringify(migrated) !== saved) {
-            localStorage.setItem('edm_umats', JSON.stringify(migrated));
+          } catch (e) {
+            console.error("Local migration parse failed:", e);
           }
         }
-      } catch (e) {
-        console.error('Failed to parse saved data', e);
       }
-    }
+      
+      setUmats(list);
+    });
 
-    // Load Master Viharas
-    const savedViharas = localStorage.getItem('edm_master_viharas');
-    if (savedViharas) {
-      try {
-        setMasterViharas(JSON.parse(savedViharas));
-      } catch (e) {
-        console.error('Failed to load master viharas', e);
-      }
-    } else {
-      const initial = [
-        { name: '崇慧佛院', pinyin: 'CHONG HUI FO YEN' },
-        { name: '禮德佛堂', pinyin: 'LI DE FO TANG' }
-      ];
-      setMasterViharas(initial);
-      localStorage.setItem('edm_master_viharas', JSON.stringify(initial));
-    }
-
-    // Load Master Panditas
-    const savedPanditas = localStorage.getItem('edm_master_panditas');
-    const defaultPanditas = [
-      { name: '林點傳師碧蓮', pinyin: 'Pandita Lim Pi Lien' },
-      { name: '張點傳師珍球', pinyin: 'Pandita Zhang Cen Chiu' },
-      { name: '許點傳師媽源', pinyin: 'Pandita Xi Ma Yen' }
-    ];
-
-    if (savedPanditas) {
-      try {
-        const parsed = JSON.parse(savedPanditas);
-        // Merge with defaults to ensure new ones are available if they were recently added
-        const merged = [...parsed];
-        defaultPanditas.forEach(def => {
-          if (!merged.find(p => p.name === def.name)) {
-            merged.push(def);
-          }
-        });
-        setMasterPanditas(merged);
-        if (JSON.stringify(merged) !== savedPanditas) {
-          localStorage.setItem('edm_master_panditas', JSON.stringify(merged));
+    // 2. Sync Master Viharas
+    const unsubscribeViharas = onSnapshot(doc(db, 'metadata', 'viharas'), (snapshot) => {
+      if (snapshot.exists()) {
+        setMasterViharas(snapshot.data().list || []);
+      } else {
+        // Fallback to local storage or defaults, then seed
+        const localSaved = localStorage.getItem('edm_master_viharas');
+        let initial = [
+          { name: '崇慧佛院', pinyin: 'CHONG HUI FO YEN' },
+          { name: '禮德佛堂', pinyin: 'LI DE FO TANG' }
+        ];
+        if (localSaved) {
+          try {
+            const parsed = JSON.parse(localSaved);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              initial = parsed;
+            }
+          } catch (e) {}
         }
-      } catch (e) {
-        console.error('Failed to load master panditas', e);
-        setMasterPanditas(defaultPanditas);
+        setMasterViharas(initial);
+        setDoc(doc(db, 'metadata', 'viharas'), { list: initial });
       }
-    } else {
-      setMasterPanditas(defaultPanditas);
-      localStorage.setItem('edm_master_panditas', JSON.stringify(defaultPanditas));
-    }
+    });
+
+    // 3. Sync Master Panditas
+    const unsubscribePanditas = onSnapshot(doc(db, 'metadata', 'panditas'), (snapshot) => {
+      if (snapshot.exists()) {
+        setMasterPanditas(snapshot.data().list || []);
+      } else {
+        // Fallback to local storage or defaults, then seed
+        const localSaved = localStorage.getItem('edm_master_panditas');
+        let initial = [
+          { name: '林點傳師碧蓮', pinyin: 'Pandita Lim Pi Lien' },
+          { name: '張點傳師珍球', pinyin: 'Pandita Zhang Cen Chiu' },
+          { name: '許點傳師媽源', pinyin: 'Pandita Xi Ma Yen' }
+        ];
+        if (localSaved) {
+          try {
+            const parsed = JSON.parse(localSaved);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              initial = parsed;
+            }
+          } catch (e) {}
+        }
+        setMasterPanditas(initial);
+        setDoc(doc(db, 'metadata', 'panditas'), { list: initial });
+      }
+    });
+
+    return () => {
+      unsubscribeUmats();
+      unsubscribeViharas();
+      unsubscribePanditas();
+    };
   }, []);
 
   function findPinyinMatch(name: string) {
@@ -276,9 +284,37 @@ export default function App() {
     return null;
   }
 
-  const saveToLocal = (newUmats: Umat[]) => {
-    localStorage.setItem('edm_umats', JSON.stringify(newUmats));
-    setUmats(newUmats);
+  const saveToLocal = async (newUmats: Umat[]) => {
+    // 1. Identify deleted items and delete them in Firestore
+    const currentIds = new Set<string>(umats.map(u => u.id || ''));
+    const newIds = new Set<string>(newUmats.map(u => u.id || ''));
+    const deletedIds = Array.from(currentIds).filter((id): id is string => id !== '' && !newIds.has(id));
+    for (const id of deletedIds) {
+      try {
+        await deleteDoc(doc(db, 'umats', id));
+      } catch (err) {
+        console.error("Failed to delete umat from Firestore:", err);
+      }
+    }
+
+    // 2. Identify new or changed items and write them to Firestore
+    const changedOrNew = newUmats.filter(nu => {
+      const existing = umats.find(u => u.id === nu.id);
+      return !existing || JSON.stringify(existing) !== JSON.stringify(nu);
+    });
+    for (const u of changedOrNew) {
+      if (!u.id) continue;
+      try {
+        await setDoc(doc(db, 'umats', u.id), u);
+      } catch (err) {
+        console.error("Failed to save/update umat in Firestore:", err);
+      }
+    }
+    
+    // Also backup to localStorage
+    try {
+      localStorage.setItem('edm_umats', JSON.stringify(newUmats));
+    } catch (e) {}
   };
 
   const handleSaveUmat = (data: UmatInput) => {
@@ -1240,9 +1276,13 @@ export default function App() {
               >
                 <MasterDataManager 
                   viharas={masterViharas} 
-                  setViharas={(v) => { setMasterViharas(v); localStorage.setItem('edm_master_viharas', JSON.stringify(v)); }}
+                  setViharas={async (v) => {
+                    await setDoc(doc(db, 'metadata', 'viharas'), { list: v });
+                  }}
                   panditas={masterPanditas}
-                  setPanditas={(p) => { setMasterPanditas(p); localStorage.setItem('edm_master_panditas', JSON.stringify(p)); }}
+                  setPanditas={async (p) => {
+                    await setDoc(doc(db, 'metadata', 'panditas'), { list: p });
+                  }}
                 />
               </motion.div>
             )}
@@ -2192,105 +2232,113 @@ function UmatForm({
         </div>
 
         <div className="space-y-8">
-          <h3 className="text-xs uppercase tracking-widest text-temple-gold font-bold">Pandita & ID</h3>
+          {/* Section: Pandita */}
+          <div className="space-y-6">
+            <h3 className="text-xs uppercase tracking-widest text-temple-gold font-bold">Data Pandita</h3>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-stone-500 uppercase tracking-wider pl-1 font-sans">
-              Pilih Pandita
-            </label>
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 group-focus-within:text-temple-gold transition-colors z-10">
-                <User size={18} />
-              </div>
-              <select
-                value={panditaSelect}
-                onChange={(e) => handlePanditaSelectChange(e.target.value)}
-                className="w-full bg-stone-50 border border-stone-100 rounded-2xl py-3 pl-12 pr-4 text-stone-800 focus:outline-none focus:ring-2 focus:ring-temple-gold/10 focus:border-temple-gold transition-all appearance-none cursor-pointer font-sans"
-              >
-                <option value="">Pilih Pandita...</option>
-                {masterPanditas.map(p => (
-                  <option key={p.name} value={p.name}>{p.name} {p.pinyin ? `(${p.pinyin})` : ''}</option>
-                ))}
-                <option value="Lainnya">Lainnya</option>
-              </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">
-                <ChevronRight size={14} className="rotate-90" />
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-stone-500 uppercase tracking-wider pl-1 font-sans">
+                Pilih Pandita
+              </label>
+              <div className="relative group">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 group-focus-within:text-temple-gold transition-colors z-10">
+                  <User size={18} />
+                </div>
+                <select
+                  value={panditaSelect}
+                  onChange={(e) => handlePanditaSelectChange(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-100 rounded-2xl py-3 pl-12 pr-4 text-stone-800 focus:outline-none focus:ring-2 focus:ring-temple-gold/10 focus:border-temple-gold transition-all appearance-none cursor-pointer font-sans"
+                >
+                  <option value="">Pilih Pandita...</option>
+                  {masterPanditas.map(p => (
+                    <option key={p.name} value={p.name}>{p.name} {p.pinyin ? `(${p.pinyin})` : ''}</option>
+                  ))}
+                  <option value="Lainnya">Lainnya</option>
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">
+                  <ChevronRight size={14} className="rotate-90" />
+                </div>
               </div>
             </div>
+
+            {panditaSelect === 'Lainnya' && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="space-y-6 overflow-hidden"
+              >
+                <FormField 
+                  label="Nama Pandita" 
+                  id="pandita"
+                  icon={<User size={18} />}
+                  placeholder="Masukkan Nama Pandita"
+                  value={formData.pandita}
+                  onChange={(v) => {
+                    const cleaned = v.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ');
+                    const formatted = formatPanditaName(cleaned);
+                    setFormData(prev => ({ ...prev, pandita: formatted }));
+                    
+                    if (!cleaned.trim()) {
+                      setFormData(prev => ({ ...prev, panditaPinyin: "" }));
+                      return;
+                    }
+                    
+                    const pinyin = findPinyinMatch(formatted) || findPinyinMatch(cleaned) || findPinyinMatch(v);
+                    if (pinyin) {
+                      setFormData(prev => ({ ...prev, panditaPinyin: pinyin }));
+                    }
+                  }}
+                />
+
+                <FormField 
+                  label="Pandita Pinyin" 
+                  id="panditaPinyin"
+                  icon={<User size={18} />}
+                  placeholder="Pinyin Pandita"
+                  value={formData.panditaPinyin || ''}
+                  onChange={(v) => setFormData(prev => ({ ...prev, panditaPinyin: v }))}
+                />
+              </motion.div>
+            )}
           </div>
 
-          {panditaSelect === 'Lainnya' && (
-            <motion.div 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="space-y-8 overflow-hidden"
-            >
-              <FormField 
-                label="Nama Pandita" 
-                id="pandita"
-                icon={<User size={18} />}
-                placeholder="Masukkan Nama Pandita"
-                value={formData.pandita}
-                onChange={(v) => {
-                  const cleaned = v.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ');
-                  const formatted = formatPanditaName(cleaned);
-                  setFormData(prev => ({ ...prev, pandita: formatted }));
-                  
-                  if (!cleaned.trim()) {
-                    setFormData(prev => ({ ...prev, panditaPinyin: "" }));
-                    return;
-                  }
-                  
-                  const pinyin = findPinyinMatch(formatted) || findPinyinMatch(cleaned) || findPinyinMatch(v);
-                  if (pinyin) {
-                    setFormData(prev => ({ ...prev, panditaPinyin: pinyin }));
-                  }
-                }}
-              />
+          {/* Section: ID & Sacred Position */}
+          <div className="space-y-6 pt-6 border-t border-stone-100">
+            <h3 className="text-xs uppercase tracking-widest text-temple-gold font-bold">No ID & Jabatan Suci</h3>
 
-              <FormField 
-                label="Pandita Pinyin" 
-                id="panditaPinyin"
-                icon={<User size={18} />}
-                placeholder="Pinyin Pandita"
-                value={formData.panditaPinyin || ''}
-                onChange={(v) => setFormData(prev => ({ ...prev, panditaPinyin: v }))}
-              />
-            </motion.div>
-          )}
+            <FormField 
+              label="No. ID / Kartu" 
+              id="noId"
+              icon={<IdCardIcon size={18} />}
+              placeholder="Contoh: EDM-001"
+              value={formData.noId}
+              required={true}
+              onChange={(v) => setFormData(prev => ({ ...prev, noId: v }))}
+            />
 
-          <FormField 
-            label="No. ID / Kartu" 
-            id="noId"
-            icon={<IdCardIcon size={18} />}
-            placeholder="Contoh: EDM-001"
-            value={formData.noId}
-            required={true}
-            onChange={(v) => setFormData(prev => ({ ...prev, noId: v }))}
-          />
-
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-stone-500 uppercase tracking-wider pl-1 font-sans">
-              Jabatan Suci
-            </label>
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 group-focus-within:text-temple-gold transition-colors z-10">
-                <ShieldCheck size={18} />
-              </div>
-              <select
-                value={formData.jabatanSuci}
-                onChange={(e) => setFormData(prev => ({ ...prev, jabatanSuci: e.target.value }))}
-                className="w-full bg-stone-50 border border-stone-100 rounded-2xl py-3 pl-12 pr-4 text-stone-800 focus:outline-none focus:ring-2 focus:ring-temple-gold/10 focus:border-temple-gold transition-all appearance-none cursor-pointer font-sans uppercase"
-              >
-                <option value="">Pilih Jabatan...</option>
-                <option value="點傳師 - TIEN CHUAN SE">點傳師 - Tien Chuan Se</option>
-                <option value="講師 - CIANG SE">講師 - Ciang Se</option>
-                <option value="壇主 - THAN CU">壇主 - Than Cu</option>
-                <option value="副壇主 - FU THAN CU">副壇主 - Fu Than Cu</option>
-                <option value="道親 - UMAT">道親 - Umat</option>
-              </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">
-                <ChevronRight size={14} className="rotate-90" />
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-stone-500 uppercase tracking-wider pl-1 font-sans">
+                Jabatan Suci
+              </label>
+              <div className="relative group">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 group-focus-within:text-temple-gold transition-colors z-10">
+                  <ShieldCheck size={18} />
+                </div>
+                <select
+                  value={formData.jabatanSuci}
+                  onChange={(e) => setFormData(prev => ({ ...prev, jabatanSuci: e.target.value }))}
+                  className="w-full bg-stone-50 border border-stone-100 rounded-2xl py-3 pl-12 pr-4 text-stone-800 focus:outline-none focus:ring-2 focus:ring-temple-gold/10 focus:border-temple-gold transition-all appearance-none cursor-pointer font-sans uppercase"
+                >
+                  <option value="">Pilih Jabatan...</option>
+                  <option value="點傳師 - TIEN CHUAN SE">點傳師 - Tien Chuan Se</option>
+                  <option value="講師 - CIANG SE">講師 - Ciang Se</option>
+                  <option value="壇主 - THAN CU">壇主 - Than Cu</option>
+                  <option value="副壇主 - FU THAN CU">副壇主 - Fu Than Cu</option>
+                  <option value="道親 - UMAT">道親 - Umat</option>
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">
+                  <ChevronRight size={14} className="rotate-90" />
+                </div>
               </div>
             </div>
           </div>

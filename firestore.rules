@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /umats/{umatId} {
+      allow read, write: if true;
+    }
+    match /design_settings/{settingsId} {
+      allow read, write: if true;
+    }
+  }
+}

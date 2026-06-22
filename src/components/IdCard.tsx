@@ -430,7 +430,7 @@ export const IdCard: React.FC<IdCardProps> = ({ data, onClose, isFrontOnly, isBa
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md overflow-y-auto"
-      onClick={onClose}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="flex flex-col items-center gap-8 max-w-6xl w-full py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl justify-items-center">
