@@ -126,6 +126,7 @@ export default function App() {
   const [isPrintMode, setIsPrintMode] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [printLayoutMode, setPrintLayoutMode] = useState<'all-fronts-first' | 'interleaved'>('all-fronts-first');
+  const [printGap, setPrintGap] = useState<number>(0);
   const [editingUmat, setEditingUmat] = useState<Umat | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [jabatanFilter, setJabatanFilter] = useState<string>('all');
@@ -1498,34 +1499,80 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Layout Mode Selector (Indonesian instructions) */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold shrink-0">Format Susunan Halaman:</span>
-                <div className="flex flex-wrap gap-1 bg-stone-950 p-1 rounded-xl border border-stone-800">
-                  <button
-                    onClick={() => setPrintLayoutMode('all-fronts-first')}
-                    className={cn(
-                      "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5",
-                      printLayoutMode === 'all-fronts-first'
-                        ? "bg-amber-500 text-stone-950 shadow-md"
-                        : "text-stone-400 hover:text-white"
-                    )}
-                  >
-                    <Layers size={13} />
-                    Semua Depan Dulu, Baru Belakang (Manual Bolak-Balik)
-                  </button>
-                  <button
-                    onClick={() => setPrintLayoutMode('interleaved')}
-                    className={cn(
-                      "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5",
-                      printLayoutMode === 'interleaved'
-                        ? "bg-amber-500 text-stone-950 shadow-md"
-                        : "text-stone-400 hover:text-white"
-                    )}
-                  >
-                    <RefreshCw size={13} />
-                    Depan & Belakang Bergantian (Duplex Otomatis)
-                  </button>
+              {/* Layout & Spacing Selectors wrapper */}
+              <div className="flex flex-col xl:flex-row gap-4 items-stretch xl:items-center">
+                {/* Layout Mode Selector (Indonesian instructions) */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold shrink-0">Susunan Halaman:</span>
+                  <div className="flex flex-wrap gap-1 bg-stone-950 p-1 rounded-xl border border-stone-800">
+                    <button
+                      onClick={() => setPrintLayoutMode('all-fronts-first')}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5",
+                        printLayoutMode === 'all-fronts-first'
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      <Layers size={13} />
+                      Semua Depan Dulu, Baru Belakang (Manual)
+                    </button>
+                    <button
+                      onClick={() => setPrintLayoutMode('interleaved')}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5",
+                        printLayoutMode === 'interleaved'
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      <RefreshCw size={13} />
+                      Depan & Belakang Bergantian (Duplex)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Card Gap Selector */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold shrink-0">Jarak Antar Kartu (Symmetric Gap):</span>
+                  <div className="flex flex-wrap gap-1 bg-stone-950 p-1 rounded-xl border border-stone-800">
+                    <button
+                      onClick={() => setPrintGap(0)}
+                      title="Saran: Tanpa celah antar kartu agar sekali potong lurus & depan-belakang pas lurus"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
+                        printGap === 0
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      0mm (Saran)
+                    </button>
+                    <button
+                      onClick={() => setPrintGap(2)}
+                      title="Presisi celah 2mm dengan batas lurus"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
+                        printGap === 2
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      2mm celah
+                    </button>
+                    <button
+                      onClick={() => setPrintGap(4)}
+                      title="Presisi celah 4mm"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
+                        printGap === 4
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      4mm celah
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1555,9 +1602,20 @@ export default function App() {
               </div>
             </div>
 
+            {/* Helpful Print Dialog configuration tips (Hidden on Print) */}
+            <div className="bg-amber-500/10 border-b border-stone-800 text-stone-300 px-6 py-3 text-xs print:hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                <span>
+                  <strong>Saran Cetak Presisi (Bolak-Balik Selaras):</strong> Pada jendela print browser Anda, ubah pengaturan <strong>Margin menjadi "None" (Tanpa Margin)</strong> dan <strong>Skala menjadi "Default" (100%)</strong> agar posisi depan & belakang pas dan lurus sehingga mudah dipotong.
+                </span>
+              </div>
+              <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded whitespace-nowrap shrink-0">Mirroring Baris Diaktifkan</span>
+            </div>
+
             {/* Print Document Container */}
             <div ref={printContainerRef} className="py-8 print:py-0 w-full flex justify-center">
-              <PrintingView umats={umats.filter(u => selectedIds.has(u.id))} layoutMode={printLayoutMode} />
+              <PrintingView umats={umats.filter(u => selectedIds.has(u.id))} layoutMode={printLayoutMode} gap={printGap} />
             </div>
           </div>
         )}
@@ -1567,13 +1625,31 @@ export default function App() {
 }
 
 // --- Printing View Component ---
-function PrintingView({ umats, layoutMode = 'all-fronts-first' }: { umats: Umat[], layoutMode?: 'all-fronts-first' | 'interleaved' }) {
+function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0 }: { umats: Umat[], layoutMode?: 'all-fronts-first' | 'interleaved', gap?: number }) {
   // Items per A4 page (e.g., 3 columns x 3 rows = 9 ID cards)
   const batchSize = 9;
   const batches: Umat[][] = [];
   for (let i = 0; i < umats.length; i += batchSize) {
     batches.push(umats.slice(i, i + batchSize));
   }
+
+  // Helper to pad any batch to exactly 9 items
+  const getPaddedBatch = (batch: Umat[]) => {
+    const padded = [...batch];
+    while (padded.length < 9) {
+      padded.push(null as any);
+    }
+    return padded;
+  };
+
+  // Helper to mirror back grid items horizontally so that they align exactly when printed double-sided
+  const getMirroredBackBatch = (paddedBatch: (Umat | null)[]) => {
+    return [
+      paddedBatch[2], paddedBatch[1], paddedBatch[0], // Row 1 horizontally mirrored
+      paddedBatch[5], paddedBatch[4], paddedBatch[3], // Row 2 horizontally mirrored
+      paddedBatch[8], paddedBatch[7], paddedBatch[6]  // Row 3 horizontally mirrored
+    ];
+  };
 
   return (
     <div className="print-container font-sans bg-white p-0 md:p-8 flex flex-col items-center">
@@ -1649,6 +1725,8 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first' }: { umats: Umat[
             width: 100% !important;
             height: auto !important;
             visibility: visible;
+            padding: 0 !important;
+            margin: 0 !important;
           }
           @page { size: A4 portrait; margin: 0; }
         }
@@ -1656,7 +1734,6 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first' }: { umats: Umat[
         .a4-page {
           width: 210mm;
           height: 297mm;
-          padding: 8mm;
           margin: 0 auto 20mm;
           background: white;
           box-shadow: 0 0 10px rgba(0,0,0,0.1);
@@ -1665,11 +1742,11 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first' }: { umats: Umat[
           page-break-inside: avoid;
           break-inside: avoid;
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          grid-template-rows: repeat(3, 1fr);
-          gap: 4mm;
-          justify-items: center;
-          align-items: center;
+          grid-template-columns: repeat(3, 54mm);
+          grid-template-rows: repeat(3, 85mm);
+          gap: ${gap}mm;
+          justify-content: center;
+          align-content: center;
           overflow: hidden;
           box-sizing: border-box;
           position: relative;
@@ -1689,45 +1766,65 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first' }: { umats: Umat[
           {/* Bagian Pertama: Semua Sisi Depan Terlebih Dahulu */}
           {batches.map((batch, bIndex) => (
             <div key={`front-page-${bIndex}`} className="a4-page">
-              {batch.map((u) => (
-                <div key={`front-${u.id}`} className="flex items-center justify-center relative">
-                  <IdCard data={u} isFrontOnly forceSmall />
-                </div>
-              ))}
+              {getPaddedBatch(batch).map((u, idx) => {
+                if (!u) {
+                  return <div key={`empty-front-${idx}`} className="w-[54mm] h-[85mm] opacity-0" />;
+                }
+                return (
+                  <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[54mm] h-[85mm]">
+                    <IdCard data={u} isFrontOnly forceSmall />
+                  </div>
+                );
+              })}
             </div>
           ))}
 
-          {/* Bagian Kedua: Semua Sisi Belakang Sesuai Urutan */}
+          {/* Bagian Kedua: Semua Sisi Belakang Sesuai Urutan (Mirrored Horizontally) */}
           {batches.map((batch, bIndex) => (
             <div key={`back-page-${bIndex}`} className="a4-page">
-              {batch.map((u) => (
-                <div key={`back-${u.id}`} className="flex items-center justify-center relative">
-                  <IdCard data={u} isBackOnly forceSmall />
-                </div>
-              ))}
+              {getMirroredBackBatch(getPaddedBatch(batch)).map((u, idx) => {
+                if (!u) {
+                  return <div key={`empty-back-${idx}`} className="w-[54mm] h-[85mm] opacity-0" />;
+                }
+                return (
+                  <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[54mm] h-[85mm]">
+                    <IdCard data={u} isBackOnly forceSmall />
+                  </div>
+                );
+              })}
             </div>
           ))}
         </>
       ) : (
-        /* Sisi Depan & Belakang Bergantian per Lembar */
+        /* Sisi Depan & Belakang Bergantian per Lembar (Mirrored Horizontally on Back Side) */
         batches.map((batch, bIndex) => (
           <React.Fragment key={bIndex}>
             {/* Halaman Depan Batch Ini */}
             <div className="a4-page">
-              {batch.map((u) => (
-                <div key={`front-${u.id}`} className="flex items-center justify-center relative">
-                  <IdCard data={u} isFrontOnly forceSmall />
-                </div>
-              ))}
+              {getPaddedBatch(batch).map((u, idx) => {
+                if (!u) {
+                  return <div key={`empty-front-${idx}`} className="w-[54mm] h-[85mm] opacity-0" />;
+                }
+                return (
+                  <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[54mm] h-[85mm]">
+                    <IdCard data={u} isFrontOnly forceSmall />
+                  </div>
+                );
+              })}
             </div>
 
             {/* Halaman Belakang Batch Ini */}
             <div className="a4-page">
-              {batch.map((u) => (
-                <div key={`back-${u.id}`} className="flex items-center justify-center relative">
-                  <IdCard data={u} isBackOnly forceSmall />
-                </div>
-              ))}
+              {getMirroredBackBatch(getPaddedBatch(batch)).map((u, idx) => {
+                if (!u) {
+                  return <div key={`empty-back-${idx}`} className="w-[54mm] h-[85mm] opacity-0" />;
+                }
+                return (
+                  <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[54mm] h-[85mm]">
+                    <IdCard data={u} isBackOnly forceSmall />
+                  </div>
+                );
+              })}
             </div>
           </React.Fragment>
         ))
