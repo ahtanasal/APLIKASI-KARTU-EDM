@@ -1769,6 +1769,15 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0 }: { uma
             margin: 0 !important;
           }
 
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 210mm !important;
+            height: 297mm !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
           body * { visibility: hidden; }
           .print-container, .print-container * { visibility: visible; }
           .print-container { 

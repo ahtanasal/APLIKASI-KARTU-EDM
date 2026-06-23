@@ -117,9 +117,11 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
       backgroundPosition: 'center 55%',
       backgroundRepeat: 'no-repeat',
       colorScheme: 'light',
+      boxSizing: 'border-box',
+      imageRendering: 'high-quality',
     }}
     className={cn(
-      "relative bg-[#fff1f2] overflow-hidden border-[1px] border-rose-200 text-slate-900 select-none",
+      "relative bg-[#fff1f2] overflow-hidden border-[1px] border-rose-200 text-slate-900 select-none box-border",
       !forceSmall && "shadow-md"
     )}
   >
@@ -217,9 +219,11 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
       width: '54mm', 
       height: '85mm',
       colorScheme: 'light',
+      boxSizing: 'border-box',
+      imageRendering: 'high-quality',
     }}
     className={cn(
-      "relative bg-[#fff1f2] overflow-hidden border-[1px] border-rose-200 text-slate-900 select-none",
+      "relative bg-[#fff1f2] overflow-hidden border-[1px] border-rose-200 text-slate-900 select-none box-border",
       !forceSmall && "shadow-md"
     )}
   >
@@ -240,7 +244,8 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
           opacity: 0.85,
-          filter: 'saturate(0.7) contrast(1.05) brightness(1.05)',
+          filter: forceSmall ? 'none' : 'saturate(0.7) contrast(1.05) brightness(1.05)',
+          imageRendering: 'high-quality',
         }}
       />
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white/20 via-transparent to-white/30" />
