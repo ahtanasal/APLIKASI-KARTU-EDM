@@ -121,7 +121,7 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
       imageRendering: 'high-quality',
     }}
     className={cn(
-      "relative bg-[#fff1f2] overflow-hidden border-[1px] border-rose-200 text-slate-900 select-none box-border",
+      "relative bg-[#fff1f2] overflow-hidden border-[1px] border-rose-200 text-slate-900 select-none box-border id-card-output",
       !forceSmall && "shadow-md"
     )}
   >
@@ -223,7 +223,7 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
       imageRendering: 'high-quality',
     }}
     className={cn(
-      "relative bg-[#fff1f2] overflow-hidden border-[1px] border-rose-200 text-slate-900 select-none box-border",
+      "relative bg-[#fff1f2] overflow-hidden border-[1px] border-rose-200 text-slate-900 select-none box-border id-card-output",
       !forceSmall && "shadow-md"
     )}
   >
