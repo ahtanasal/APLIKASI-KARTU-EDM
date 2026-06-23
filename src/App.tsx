@@ -118,6 +118,10 @@ const generateId = () => {
 };
 
 export default function App() {
+  useEffect(() => {
+    document.title = "Kartu Umat EDM SMD";
+  }, []);
+
   const [activeTab, setActiveTab] = useState<'landing' | 'list' | 'input' | 'master' | 'relations' | 'design' | 'edit-all'>('landing');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [umats, setUmats] = useState<Umat[]>([]);
@@ -126,8 +130,7 @@ export default function App() {
   const [isPrintMode, setIsPrintMode] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [printLayoutMode, setPrintLayoutMode] = useState<'all-fronts-first' | 'interleaved'>('all-fronts-first');
-  const [printGap, setPrintGap] = useState<number>(2);
-  const [showCuttingGuide, setShowCuttingGuide] = useState<boolean>(true);
+  const [printGap, setPrintGap] = useState<number>(6);
   const [editingUmat, setEditingUmat] = useState<Umat | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [jabatanFilter, setJabatanFilter] = useState<string>('all');
@@ -1583,22 +1586,45 @@ export default function App() {
                           : "text-stone-400 hover:text-white"
                       )}
                     >
-                      6mm
+                      6mm (Baru)
+                    </button>
+                    <button
+                      onClick={() => setPrintGap(8)}
+                      title="Jarak lebar 8mm"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
+                        printGap === 8
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      8mm
+                    </button>
+                    <button
+                      onClick={() => setPrintGap(10)}
+                      title="Jarak lebar 10mm"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
+                        printGap === 10
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      10mm
+                    </button>
+                    <button
+                      onClick={() => setPrintGap(12)}
+                      title="Jarak lebar 12mm"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
+                        printGap === 12
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      12mm
                     </button>
                   </div>
-                </div>
-
-                {/* Cutting Guide Line Toggle */}
-                <div className="flex items-center gap-2 px-2 py-1 bg-stone-950 rounded-xl border border-stone-800">
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input 
-                      type="checkbox"
-                      checked={showCuttingGuide}
-                      onChange={(e) => setShowCuttingGuide(e.target.checked)}
-                      className="w-4 h-4 rounded border-stone-700 bg-stone-900 text-amber-500 focus:ring-amber-500 focus:ring-offset-stone-950 focus:ring-2"
-                    />
-                    <span className="text-xs text-stone-300 font-bold pr-2">Garis Potong (Dashed Guide)</span>
-                  </label>
                 </div>
               </div>
 
@@ -1641,7 +1667,7 @@ export default function App() {
 
             {/* Print Document Container */}
             <div ref={printContainerRef} className="py-8 print:py-0 w-full flex justify-center">
-              <PrintingView umats={umats.filter(u => selectedIds.has(u.id))} layoutMode={printLayoutMode} gap={printGap} showCuttingGuide={showCuttingGuide} />
+              <PrintingView umats={umats.filter(u => selectedIds.has(u.id))} layoutMode={printLayoutMode} gap={printGap} />
             </div>
           </div>
         )}
@@ -1651,7 +1677,7 @@ export default function App() {
 }
 
 // --- Printing View Component ---
-function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0, showCuttingGuide = true }: { umats: Umat[], layoutMode?: 'all-fronts-first' | 'interleaved', gap?: number, showCuttingGuide?: boolean }) {
+function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0 }: { umats: Umat[], layoutMode?: 'all-fronts-first' | 'interleaved', gap?: number }) {
   // Items per A4 page (e.g., 3 columns x 3 rows = 9 ID cards)
   const batchSize = 9;
   const batches: Umat[][] = [];
@@ -1797,13 +1823,7 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0, showCut
                   return <div key={`empty-front-${idx}`} className="w-[54mm] h-[85mm] opacity-0" />;
                 }
                 return (
-                  <div 
-                    key={`front-${u.id}`} 
-                    className={cn(
-                      "flex items-center justify-center relative w-[54mm] h-[85mm] transition-all",
-                      showCuttingGuide && "outline-[0.15mm] outline-dashed outline-stone-400/80 print:outline-stone-400"
-                    )}
-                  >
+                  <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[54mm] h-[85mm]">
                     <IdCard data={u} isFrontOnly forceSmall />
                   </div>
                 );
@@ -1819,13 +1839,7 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0, showCut
                   return <div key={`empty-back-${idx}`} className="w-[54mm] h-[85mm] opacity-0" />;
                 }
                 return (
-                  <div 
-                    key={`back-${u.id}`} 
-                    className={cn(
-                      "flex items-center justify-center relative w-[54mm] h-[85mm] transition-all",
-                      showCuttingGuide && "outline-[0.15mm] outline-dashed outline-stone-400/80 print:outline-stone-400"
-                    )}
-                  >
+                  <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[54mm] h-[85mm]">
                     <IdCard data={u} isBackOnly forceSmall />
                   </div>
                 );
@@ -1844,13 +1858,7 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0, showCut
                   return <div key={`empty-front-${idx}`} className="w-[54mm] h-[85mm] opacity-0" />;
                 }
                 return (
-                  <div 
-                    key={`front-${u.id}`} 
-                    className={cn(
-                      "flex items-center justify-center relative w-[54mm] h-[85mm] transition-all",
-                      showCuttingGuide && "outline-[0.15mm] outline-dashed outline-stone-400/80 print:outline-stone-400"
-                    )}
-                  >
+                  <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[54mm] h-[85mm]">
                     <IdCard data={u} isFrontOnly forceSmall />
                   </div>
                 );
@@ -1864,13 +1872,7 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0, showCut
                   return <div key={`empty-back-${idx}`} className="w-[54mm] h-[85mm] opacity-0" />;
                 }
                 return (
-                  <div 
-                    key={`back-${u.id}`} 
-                    className={cn(
-                      "flex items-center justify-center relative w-[54mm] h-[85mm] transition-all",
-                      showCuttingGuide && "outline-[0.15mm] outline-dashed outline-stone-400/80 print:outline-stone-400"
-                    )}
-                  >
+                  <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[54mm] h-[85mm]">
                     <IdCard data={u} isBackOnly forceSmall />
                   </div>
                 );
