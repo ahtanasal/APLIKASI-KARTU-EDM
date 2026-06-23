@@ -1803,8 +1803,8 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0 }: { uma
           page-break-inside: avoid;
           break-inside: avoid;
           display: grid;
-          grid-template-columns: repeat(3, 54mm);
-          grid-template-rows: repeat(3, 85mm);
+          grid-template-columns: repeat(3, 56mm);
+          grid-template-rows: repeat(3, 87mm);
           gap: ${gap}mm;
           justify-content: center;
           align-content: center;
@@ -1829,10 +1829,10 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0 }: { uma
             <div key={`front-page-${bIndex}`} className="a4-page">
               {getPaddedBatch(batch).map((u, idx) => {
                 if (!u) {
-                  return <div key={`empty-front-${idx}`} className="w-[54mm] h-[85mm] opacity-0" />;
+                  return <div key={`empty-front-${idx}`} className="w-[56mm] h-[87mm] opacity-0" />;
                 }
                 return (
-                  <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[54mm] h-[85mm]">
+                  <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[56mm] h-[87mm]">
                     <IdCard data={u} isFrontOnly forceSmall />
                   </div>
                 );
@@ -1845,10 +1845,10 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0 }: { uma
             <div key={`back-page-${bIndex}`} className="a4-page">
               {getMirroredBackBatch(getPaddedBatch(batch)).map((u, idx) => {
                 if (!u) {
-                  return <div key={`empty-back-${idx}`} className="w-[54mm] h-[85mm] opacity-0" />;
+                  return <div key={`empty-back-${idx}`} className="w-[56mm] h-[87mm] opacity-0" />;
                 }
                 return (
-                  <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[54mm] h-[85mm]">
+                  <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[56mm] h-[87mm]">
                     <IdCard data={u} isBackOnly forceSmall />
                   </div>
                 );
@@ -1864,10 +1864,10 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0 }: { uma
             <div className="a4-page">
               {getPaddedBatch(batch).map((u, idx) => {
                 if (!u) {
-                  return <div key={`empty-front-${idx}`} className="w-[54mm] h-[85mm] opacity-0" />;
+                  return <div key={`empty-front-${idx}`} className="w-[56mm] h-[87mm] opacity-0" />;
                 }
                 return (
-                  <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[54mm] h-[85mm]">
+                  <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[56mm] h-[87mm]">
                     <IdCard data={u} isFrontOnly forceSmall />
                   </div>
                 );
@@ -1878,10 +1878,10 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0 }: { uma
             <div className="a4-page">
               {getMirroredBackBatch(getPaddedBatch(batch)).map((u, idx) => {
                 if (!u) {
-                  return <div key={`empty-back-${idx}`} className="w-[54mm] h-[85mm] opacity-0" />;
+                  return <div key={`empty-back-${idx}`} className="w-[56mm] h-[87mm] opacity-0" />;
                 }
                 return (
-                  <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[54mm] h-[85mm]">
+                  <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[56mm] h-[87mm]">
                     <IdCard data={u} isBackOnly forceSmall />
                   </div>
                 );
