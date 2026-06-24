@@ -54,6 +54,43 @@ function ChineseCorner({ position }: { position: 'top-left' | 'top-right' | 'bot
   );
 }
 
+const indonesianMonths = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+];
+
+const formatGregorianDate = (dateStr: string): string => {
+  if (!dateStr) return '';
+  try {
+    const cleanStr = dateStr.trim().replace(/\//g, '-');
+    const parts = cleanStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    
+    let day = NaN;
+    let month = NaN;
+    let year = NaN;
+    
+    if (parts[0].length === 4) {
+      year = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10);
+      day = parseInt(parts[2], 10);
+    } else {
+      day = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10);
+      year = parseInt(parts[2], 10);
+    }
+    
+    if (isNaN(day) || isNaN(month) || isNaN(year) || month < 1 || month > 12) {
+      return dateStr;
+    }
+    
+    return `${day} ${indonesianMonths[month - 1]} ${year}`;
+  } catch (e) {
+    console.error("Error formatting Gregorian date:", e);
+    return dateStr;
+  }
+};
+
 const getLunarDateFallback = (masehi: string, lunarDate?: string, waktu?: string) => {
   if (lunarDate && /[\u4e00-\u9fa5]/.test(lunarDate)) {
     return lunarDate;
@@ -175,7 +212,8 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
             // Special handling for sub-values based on field ID or key
             if (field.id === 'date') {
               const lunarFull = getLunarDateFallback(data.tanggalMasehi, data.tanggalLunar, data.waktu);
-              value = `${lunarFull}${data.tanggalMasehi ? `\n${data.tanggalMasehi}` : ''}`;
+              const formattedMasehi = formatGregorianDate(data.tanggalMasehi);
+              value = `${lunarFull}${formattedMasehi ? `\n${formattedMasehi}` : ''}`;
             } else if (field.id === 'pandita') {
               subValue = getPinyinFallback(data.pandita, data.panditaPinyin);
             } else if (field.id === 'pengajak') {
@@ -268,7 +306,8 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
               style={{ 
                 fontSize: (data.nama || data.namaIndonesia).length > 20 ? '10px' : 
                           (data.nama || data.namaIndonesia).length > 15 ? '12px' : 
-                          (data.nama || data.namaIndonesia).length > 10 ? '14px' : '16px' 
+                          (data.nama || data.namaIndonesia).length > 10 ? '14px' : '16px',
+                fontWeight: 900
               }}
             >
               {data.nama || data.namaIndonesia}
@@ -277,10 +316,11 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
               <>
                 <div className="w-[1px] h-3 bg-rose-300/40" />
                 <p 
-                  className="font-bold text-black uppercase font-sans tracking-tight"
+                  className="font-black text-black uppercase font-sans tracking-tight"
                   style={{ 
                     fontSize: data.namaPinyin.length > 25 ? '7px' : 
-                              data.namaPinyin.length > 20 ? '8px' : '10px' 
+                              data.namaPinyin.length > 20 ? '8px' : '10px',
+                    fontWeight: 900
                   }}
                 >
                   {data.namaPinyin}
@@ -631,25 +671,25 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
       <div className={cn("flex-1 flex flex-col justify-center min-w-0 bg-white/10", forceSmall ? "px-1 py-0" : "px-1.5 py-0.5")}>
         <p 
           className={cn(
-            "text-black leading-tight uppercase animate-fade-in",
-            hasChineseValue ? "font-dfkai font-black" : "font-sans font-bold",
+            "text-black leading-tight uppercase animate-fade-in font-black",
+            hasChineseValue ? "font-dfkai" : "font-sans",
             isCentered && "text-center",
             isSingleLineOnly ? "whitespace-nowrap overflow-hidden text-ellipsis" : "whitespace-pre-wrap"
           )}
-          style={{ fontSize: dynamicValueFontSize }}
+          style={{ fontSize: dynamicValueFontSize, fontWeight: 900 }}
         >
           {value || '-'}
         </p>
         {subValue && (
           <p 
             className={cn(
-              "text-black leading-tight uppercase animate-fade-in",
-              hasChineseSubValue ? "font-dfkai font-black" : "font-sans font-bold",
+              "text-black leading-tight uppercase animate-fade-in font-black",
+              hasChineseSubValue ? "font-dfkai" : "font-sans",
               isCentered && "text-center",
               isSingleLineOnly ? "whitespace-nowrap overflow-hidden text-ellipsis" : "whitespace-pre-wrap",
               forceSmall ? "mt-0" : "mt-0.5"
             )}
-            style={{ fontSize: dynamicSubValueFontSize }}
+            style={{ fontSize: dynamicSubValueFontSize, fontWeight: 900 }}
           >
             {subValue}
           </p>
