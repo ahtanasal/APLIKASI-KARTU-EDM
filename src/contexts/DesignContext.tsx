@@ -23,6 +23,7 @@ export interface CardDesignSettings {
   showNameOnBack: boolean;
   frontLogoOpacity: number;
   fields: CardField[];
+  updatedAt?: number;
 }
 
 const defaultFields: CardField[] = [
@@ -36,7 +37,7 @@ const defaultFields: CardField[] = [
 
 const defaultSettings: CardDesignSettings = {
   frontBg: '/images/front_logo.png',
-  backBg: '/images/JiGong-6.jpeg',
+  backBg: '/images/JigongHD.png',
   qrPosition: 'bottom-left',
   showNameOnBack: false,
   frontLogoOpacity: 0.9,
@@ -69,7 +70,14 @@ export const DesignProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const unsubscribe = onSnapshot(doc(db, 'design_settings', 'main'), (snapshot) => {
       if (snapshot.exists()) {
         const remoteSettings = snapshot.data() as CardDesignSettings;
-        setSettings(remoteSettings);
+        setSettings(prev => {
+          const remoteTime = remoteSettings.updatedAt || 0;
+          const localTime = prev.updatedAt || 0;
+          if (remoteTime >= localTime) {
+            return remoteSettings;
+          }
+          return prev;
+        });
       } else {
         // Seed remote settings if first time
         setDoc(doc(db, 'design_settings', 'main'), defaultSettings);
@@ -80,7 +88,7 @@ export const DesignProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const updateSettings = async (newSettings: Partial<CardDesignSettings>) => {
     setSettings(prev => {
-      const updated = { ...prev, ...newSettings };
+      const updated = { ...prev, ...newSettings, updatedAt: Date.now() };
       try {
         localStorage.setItem('edm_card_design', JSON.stringify(updated));
       } catch (e) {}

@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useDesign, QRCodePosition } from '../contexts/DesignContext';
 import { IdCard } from './IdCard';
-import { cn } from '../lib/utils';
+import { cn, compressAndResizeImage } from '../lib/utils';
 import { Umat } from '../types';
 
 const SAMPLE_DATA: Umat = {
@@ -41,10 +41,10 @@ const SAMPLE_DATA: Umat = {
 };
 
 const BACK_IMAGES = [
+  { id: 'jigong-hd', url: '/images/JigongHD.png', label: 'Ji Gong HD' },
   { id: 'jigong-12', url: '/images/JiGong-12.jpeg', label: 'Ji Gong 12' },
   { id: 'jigong-11', url: '/images/JiGong-11.jpeg', label: 'Ji Gong 11' },
   { id: 'jigong-10', url: '/images/JiGong-10.jpeg', label: 'Ji Gong 10' },
-  { id: 'jigong-9', url: '/images/JiGong_9.jpeg', label: 'Ji Gong 9' },
   { id: 'jigong-8', url: '/images/JiGong-8.jpeg', label: 'Ji Gong 8' },
   { id: 'jigong-7', url: '/images/JiGong-7.jpeg', label: 'Ji Gong 7' },
   { id: 'jigong-6', url: '/images/JiGong-6.jpeg', label: 'Ji Gong 6' },
@@ -76,9 +76,10 @@ export function DesignerPage() {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         const base64String = reader.result as string;
-        updateSettings({ backBg: base64String });
+        const compressed = await compressAndResizeImage(base64String);
+        updateSettings({ backBg: compressed });
       };
       reader.readAsDataURL(file);
     }
@@ -148,7 +149,11 @@ export function DesignerPage() {
                       const file = (e.target as HTMLInputElement).files?.[0];
                       if (file) {
                         const reader = new FileReader();
-                        reader.onloadend = () => updateSettings({ frontBg: reader.result as string });
+                        reader.onloadend = async () => {
+                          const base64String = reader.result as string;
+                          const compressed = await compressAndResizeImage(base64String);
+                          updateSettings({ frontBg: compressed });
+                        };
                         reader.readAsDataURL(file);
                       }
                     };
