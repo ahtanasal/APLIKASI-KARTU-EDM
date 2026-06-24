@@ -193,7 +193,7 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
           <div className="flex items-baseline justify-center gap-1 whitespace-nowrap">
             <p className="font-dfkai font-black text-rose-950 leading-none text-[17px]">發 一 崇 德</p>
           </div>
-          <h2 className="font-black text-rose-900 tracking-[0.1em] font-sans leading-none uppercase mt-0.5 text-[8.5px]">FA YI CHONG DE</h2>
+          <h2 className="font-black text-rose-900 tracking-[0.1em] font-sans leading-none uppercase mt-0.5 text-[8.5px] whitespace-nowrap">FA YI CHONG DE</h2>
       
         </div>
       </div>
