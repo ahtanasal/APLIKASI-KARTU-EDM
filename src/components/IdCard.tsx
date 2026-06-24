@@ -257,11 +257,11 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
 
 const getDynamicIdFontSize = (idStr: string) => {
   const len = idStr ? idStr.length : 0;
-  if (len <= 6) return '8px';
-  if (len <= 9) return '7px';
-  if (len <= 12) return '6px';
-  if (len <= 15) return '5px';
-  return '4.5px';
+  if (len <= 6) return '9.2px';
+  if (len <= 9) return '8.0px';
+  if (len <= 12) return '6.9px';
+  if (len <= 15) return '5.75px';
+  return '5.2px';
 };
 
 const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceSmall?: boolean, innerRef?: React.RefObject<HTMLDivElement | null>, settings: CardDesignSettings }) => (
@@ -351,7 +351,7 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
 
       {/* Info and QR Code Positioned dynamically */}
       <div className={cn(
-        "absolute z-30 bg-white/70 backdrop-blur-[1px] rounded-md flex flex-col items-center gap-0.5 p-0.5 w-[42px] overflow-hidden",
+        "absolute z-30 bg-white/70 backdrop-blur-[1px] rounded-md flex flex-col items-center gap-0.5 p-0.5 w-[48px] overflow-hidden",
         settings.qrPosition === 'bottom-right' && "bottom-1.5 right-1.5",
         settings.qrPosition === 'bottom-left' && "bottom-1.5 left-1.5",
         settings.qrPosition === 'top-left' && "top-1.5 left-1.5",
@@ -359,9 +359,9 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
         settings.qrPosition === 'bottom-center' && "bottom-1.5 left-1/2 -translate-x-1/2"
       )}>
         <div className="flex items-center justify-center">
-          <QRCodeSVG value={data.noId} size={38} fgColor="#000000" />
+          <QRCodeSVG value={data.noId} size={44} fgColor="#000000" />
         </div>
-        <div className="w-[38px] select-all overflow-hidden flex items-center justify-between">
+        <div className="w-[44px] select-all overflow-hidden flex items-center justify-between">
           {Array.from(data.noId || '').map((char, idx) => (
             <span 
               key={idx}

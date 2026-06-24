@@ -62,7 +62,7 @@ import type { UmatInput, Umat } from './types';
 import { IdCard } from './components/IdCard';
 import { DesignerPage } from './components/DesignerPage';
 import { BatchEditor } from './components/BatchEditor';
-import { db } from './lib/firebase';
+import { db, handleFirestoreError, OperationType } from './lib/firebase';
 import { 
   collection, 
   doc, 
@@ -150,6 +150,56 @@ export default function App() {
 
   // Clean real-time Firestore synchronization
   useEffect(() => {
+    // Helper to load fallback local umats
+    const loadLocalUmatsFallback = () => {
+      const localSaved = localStorage.getItem('edm_umats');
+      if (localSaved) {
+        try {
+          const parsed = JSON.parse(localSaved);
+          if (Array.isArray(parsed)) {
+            setUmats(parsed);
+          }
+        } catch (e) {}
+      }
+    };
+
+    // Helper to load fallback local viharas
+    const loadLocalViharasFallback = () => {
+      const localSaved = localStorage.getItem('edm_master_viharas');
+      let initial = [
+        { name: '崇慧佛院', pinyin: 'CHONG HUI FO YEN' },
+        { name: '禮德佛堂', pinyin: 'LI DE FO TANG' }
+      ];
+      if (localSaved) {
+        try {
+          const parsed = JSON.parse(localSaved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            initial = parsed;
+          }
+        } catch (e) {}
+      }
+      setMasterViharas(initial);
+    };
+
+    // Helper to load fallback local panditas
+    const loadLocalPanditasFallback = () => {
+      const localSaved = localStorage.getItem('edm_master_panditas');
+      let initial = [
+        { name: '林點傳師碧蓮', pinyin: 'Pandita Lim Pi Lien' },
+        { name: '張點傳師珍球', pinyin: 'Pandita Zhang Cen Chiu' },
+        { name: '許點傳師媽源', pinyin: 'Pandita Xi Ma Yen' }
+      ];
+      if (localSaved) {
+        try {
+          const parsed = JSON.parse(localSaved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            initial = parsed;
+          }
+        } catch (e) {}
+      }
+      setMasterPanditas(initial);
+    };
+
     // 1. Sync Umats from Firestore in real-time
     const unsubscribeUmats = onSnapshot(collection(db, 'umats'), (snapshot) => {
       const list: Umat[] = [];
@@ -174,7 +224,13 @@ export default function App() {
               }));
               // Batch write helper
               migrated.forEach(async (u) => {
-                await setDoc(doc(db, 'umats', u.id), u);
+                try {
+                  await setDoc(doc(db, 'umats', u.id), u);
+                } catch (err: any) {
+                  if (err.code === 'permission-denied') {
+                    handleFirestoreError(err, OperationType.CREATE, `umats/${u.id}`);
+                  }
+                }
               });
               return;
             }
@@ -185,6 +241,13 @@ export default function App() {
       }
       
       setUmats(list);
+    }, (error: any) => {
+      if (error.code === 'permission-denied') {
+        handleFirestoreError(error, OperationType.LIST, 'umats');
+      } else {
+        console.warn("Firestore connection warning for 'umats':", error.message);
+      }
+      loadLocalUmatsFallback();
     });
 
     // 2. Sync Master Viharas
@@ -207,8 +270,21 @@ export default function App() {
           } catch (e) {}
         }
         setMasterViharas(initial);
-        setDoc(doc(db, 'metadata', 'viharas'), { list: initial });
+        try {
+          setDoc(doc(db, 'metadata', 'viharas'), { list: initial });
+        } catch (err: any) {
+          if (err.code === 'permission-denied') {
+            handleFirestoreError(err, OperationType.WRITE, 'metadata/viharas');
+          }
+        }
       }
+    }, (error: any) => {
+      if (error.code === 'permission-denied') {
+        handleFirestoreError(error, OperationType.GET, 'metadata/viharas');
+      } else {
+        console.warn("Firestore connection warning for 'metadata/viharas':", error.message);
+      }
+      loadLocalViharasFallback();
     });
 
     // 3. Sync Master Panditas
@@ -232,8 +308,21 @@ export default function App() {
           } catch (e) {}
         }
         setMasterPanditas(initial);
-        setDoc(doc(db, 'metadata', 'panditas'), { list: initial });
+        try {
+          setDoc(doc(db, 'metadata', 'panditas'), { list: initial });
+        } catch (err: any) {
+          if (err.code === 'permission-denied') {
+            handleFirestoreError(err, OperationType.WRITE, 'metadata/panditas');
+          }
+        }
       }
+    }, (error: any) => {
+      if (error.code === 'permission-denied') {
+        handleFirestoreError(error, OperationType.GET, 'metadata/panditas');
+      } else {
+        console.warn("Firestore connection warning for 'metadata/panditas':", error.message);
+      }
+      loadLocalPanditasFallback();
     });
 
     return () => {
