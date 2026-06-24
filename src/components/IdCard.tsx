@@ -30,20 +30,26 @@ const theme = {
 function ChineseCorner({ position }: { position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' }) {
   return (
     <div className={cn(
-      "absolute z-25 pointer-events-none",
-      position === 'top-left' && "top-0 left-0 rotate-0",
-      position === 'top-right' && "top-0 right-0 rotate-90",
-      position === 'bottom-left' && "bottom-0 left-0 -rotate-90",
-      position === 'bottom-right' && "bottom-0 right-0 rotate-180"
+      "absolute w-4 h-4 border-rose-400 z-20",
+      position === 'top-left' && "top-0 left-0 border-t-2 border-l-2",
+      position === 'top-right' && "top-0 right-0 border-t-2 border-r-2",
+      position === 'bottom-left' && "bottom-0 left-0 border-b-2 border-l-2",
+      position === 'bottom-right' && "bottom-0 right-0 border-b-2 border-r-2",
     )}>
-      <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] text-rose-900/60" fill="none" stroke="currentColor">
-        {/* Outer corner line */}
-        <path d="M 24 1.5 L 1.5 1.5 L 1.5 24" strokeWidth="1.2" strokeLinecap="square" />
-        {/* Inner corner line */}
-        <path d="M 24 4.5 L 4.5 4.5 L 4.5 24" strokeWidth="0.8" strokeLinecap="square" />
-        {/* Filled triangle accent at the very corner tip */}
-        <path d="M 1.5 1.5 L 8 1.5 L 1.5 8 Z" fill="currentColor" stroke="none" />
-      </svg>
+      <div className={cn(
+        "absolute w-2 h-2 border-rose-300",
+        position === 'top-left' && "top-0.5 left-0.5 border-t border-l",
+        position === 'top-right' && "top-0.5 right-0.5 border-t border-r",
+        position === 'bottom-left' && "bottom-0.5 left-0.5 border-b border-l",
+        position === 'bottom-right' && "bottom-0.5 right-0.5 border-b border-r",
+      )} />
+      <div className={cn(
+        "absolute w-1 h-1 border-rose-200",
+        position === 'top-left' && "top-1 left-1 border-t border-l",
+        position === 'top-right' && "top-1 right-1 border-t border-r",
+        position === 'bottom-left' && "bottom-1 left-1 border-b border-l",
+        position === 'bottom-right' && "bottom-1 right-1 border-b border-r",
+      )} />
     </div>
   );
 }
