@@ -91,20 +91,25 @@ const formatGregorianDate = (dateStr: string): string => {
   }
 };
 
+const formatLunarNumbers = (str: string): string => {
+  if (!str) return '';
+  return str.replace(/(?<!\d)\d(?!\d)/g, '0$&');
+};
+
 const getLunarDateFallback = (masehi: string, lunarDate?: string, waktu?: string) => {
   if (lunarDate && /[\u4e00-\u9fa5]/.test(lunarDate)) {
-    return lunarDate;
+    return formatLunarNumbers(lunarDate);
   }
-  if (!masehi) return lunarDate || '';
+  if (!masehi) return formatLunarNumbers(lunarDate || '');
   try {
     const parts = masehi.split("-");
-    if (parts.length !== 3) return lunarDate || '';
+    if (parts.length !== 3) return formatLunarNumbers(lunarDate || '');
     
     const day = parseInt(parts[0], 10);
     const month = parseInt(parts[1], 10);
     const year = parseInt(parts[2], 10);
     
-    if (isNaN(day) || isNaN(month) || isNaN(year)) return lunarDate || '';
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return formatLunarNumbers(lunarDate || '');
     
     const solar = Solar.fromYmd(year, month, day);
     const lunar = solar.getLunar();
@@ -117,10 +122,10 @@ const getLunarDateFallback = (masehi: string, lunarDate?: string, waktu?: string
         res += ` ${match[1]}`;
       }
     }
-    return res;
+    return formatLunarNumbers(res);
   } catch (e) {
     console.error("Lunar conversion error in IdCard:", e);
-    return lunarDate || '';
+    return formatLunarNumbers(lunarDate || '');
   }
 };
 
@@ -356,20 +361,19 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
         <div className="flex items-center justify-center">
           <QRCodeSVG value={data.noId} size={38} fgColor="#000000" />
         </div>
-        <div className="w-[38px] text-center select-all overflow-hidden flex items-center justify-center">
-          <p 
-            className="font-black text-black font-mono leading-none tracking-tighter"
-            style={{ 
-              fontSize: getDynamicIdFontSize(data.noId),
-              textAlign: 'justify',
-              textAlignLast: 'justify',
-              wordBreak: 'break-all',
-              fontWeight: 900,
-              width: '100%'
-            }}
-          >
-            {data.noId}
-          </p>
+        <div className="w-[38px] select-all overflow-hidden flex items-center justify-between">
+          {Array.from(data.noId || '').map((char, idx) => (
+            <span 
+              key={idx}
+              className="font-black text-black font-mono leading-none"
+              style={{ 
+                fontSize: getDynamicIdFontSize(data.noId),
+                fontWeight: 900
+              }}
+            >
+              {char === ' ' ? '\u00A0' : char}
+            </span>
+          ))}
         </div>
       </div>
 
