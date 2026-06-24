@@ -30,26 +30,20 @@ const theme = {
 function ChineseCorner({ position }: { position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' }) {
   return (
     <div className={cn(
-      "absolute w-4 h-4 border-rose-400 z-20",
-      position === 'top-left' && "top-0 left-0 border-t-2 border-l-2",
-      position === 'top-right' && "top-0 right-0 border-t-2 border-r-2",
-      position === 'bottom-left' && "bottom-0 left-0 border-b-2 border-l-2",
-      position === 'bottom-right' && "bottom-0 right-0 border-b-2 border-r-2",
+      "absolute z-25 pointer-events-none",
+      position === 'top-left' && "top-0 left-0 rotate-0",
+      position === 'top-right' && "top-0 right-0 rotate-90",
+      position === 'bottom-left' && "bottom-0 left-0 -rotate-90",
+      position === 'bottom-right' && "bottom-0 right-0 rotate-180"
     )}>
-      <div className={cn(
-        "absolute w-2 h-2 border-rose-300",
-        position === 'top-left' && "top-0.5 left-0.5 border-t border-l",
-        position === 'top-right' && "top-0.5 right-0.5 border-t border-r",
-        position === 'bottom-left' && "bottom-0.5 left-0.5 border-b border-l",
-        position === 'bottom-right' && "bottom-0.5 right-0.5 border-b border-r",
-      )} />
-      <div className={cn(
-        "absolute w-1 h-1 border-rose-200",
-        position === 'top-left' && "top-1 left-1 border-t border-l",
-        position === 'top-right' && "top-1 right-1 border-t border-r",
-        position === 'bottom-left' && "bottom-1 left-1 border-b border-l",
-        position === 'bottom-right' && "bottom-1 right-1 border-b border-r",
-      )} />
+      <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] text-rose-900/60" fill="none" stroke="currentColor">
+        {/* Outer corner line */}
+        <path d="M 24 1.5 L 1.5 1.5 L 1.5 24" strokeWidth="1.2" strokeLinecap="square" />
+        {/* Inner corner line */}
+        <path d="M 24 4.5 L 4.5 4.5 L 4.5 24" strokeWidth="0.8" strokeLinecap="square" />
+        {/* Filled triangle accent at the very corner tip */}
+        <path d="M 1.5 1.5 L 8 1.5 L 1.5 8 Z" fill="currentColor" stroke="none" />
+      </svg>
     </div>
   );
 }
@@ -250,6 +244,15 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
   </div>
 );
 
+const getDynamicIdFontSize = (idStr: string) => {
+  const len = idStr ? idStr.length : 0;
+  if (len <= 6) return '8px';
+  if (len <= 9) return '7px';
+  if (len <= 12) return '6px';
+  if (len <= 15) return '5px';
+  return '4.5px';
+};
+
 const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceSmall?: boolean, innerRef?: React.RefObject<HTMLDivElement | null>, settings: CardDesignSettings }) => (
   <div
     ref={innerRef}
@@ -273,7 +276,11 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
       }}
     />
 
-    <div className={cn("h-full flex flex-col relative z-20 p-2")}>
+    <div className={cn(
+      "h-full flex flex-col relative z-20 border-[0.5px] border-rose-200/50",
+      "p-1.5"
+    )}>
+      <div className="absolute inset-[1px] border border-rose-300/20 -z-10" />
       <div 
         className="absolute inset-0 -z-20 bg-[#fff1f2]"
         style={{
@@ -333,18 +340,30 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
 
       {/* Info and QR Code Positioned dynamically */}
       <div className={cn(
-        "absolute z-30 bg-white/50 backdrop-blur-[1px] rounded-lg flex flex-col items-center gap-0",
-        settings.qrPosition === 'bottom-right' && "bottom-1.5 right-1.5 p-0.5",
-        settings.qrPosition === 'bottom-left' && "bottom-1.5 left-1.5 p-0.5",
-        settings.qrPosition === 'top-left' && "top-1.5 left-1.5 p-0.5",
-        settings.qrPosition === 'top-right' && "top-1.5 right-1.5 p-0.5",
-        settings.qrPosition === 'bottom-center' && "bottom-1.5 left-1/2 -translate-x-1/2 p-0.5"
+        "absolute z-30 bg-white/70 backdrop-blur-[1px] rounded-md flex flex-col items-center gap-0.5 p-0.5 w-[42px] overflow-hidden",
+        settings.qrPosition === 'bottom-right' && "bottom-1.5 right-1.5",
+        settings.qrPosition === 'bottom-left' && "bottom-1.5 left-1.5",
+        settings.qrPosition === 'top-left' && "top-1.5 left-1.5",
+        settings.qrPosition === 'top-right' && "top-1.5 right-1.5",
+        settings.qrPosition === 'bottom-center' && "bottom-1.5 left-1/2 -translate-x-1/2"
       )}>
-        <div className="p-0.5">
+        <div className="flex items-center justify-center">
           <QRCodeSVG value={data.noId} size={38} fgColor="#000000" />
         </div>
-        <div className="px-1 text-center w-full">
-          <p className="font-black text-black font-mono tracking-tight leading-none text-[12px]">{data.noId}</p>
+        <div className="w-[38px] text-center select-all overflow-hidden flex items-center justify-center">
+          <p 
+            className="font-black text-black font-mono leading-none tracking-tighter"
+            style={{ 
+              fontSize: getDynamicIdFontSize(data.noId),
+              textAlign: 'justify',
+              textAlignLast: 'justify',
+              wordBreak: 'break-all',
+              fontWeight: 900,
+              width: '100%'
+            }}
+          >
+            {data.noId}
+          </p>
         </div>
       </div>
 
