@@ -161,6 +161,7 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
       colorScheme: 'light',
       boxSizing: 'border-box',
       imageRendering: 'high-quality',
+      borderRadius: '3.18mm', // CR-80 standard rounded corners (approx R3)
     }}
     className={cn(
       "relative bg-[#fff1f2] overflow-hidden border-[1px] border-rose-200 text-slate-900 select-none box-border id-card-output",
@@ -172,14 +173,18 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
       className="absolute inset-0 z-0" 
       style={{ 
         background: 'linear-gradient(to bottom, rgba(255, 241, 242, 0.75), rgba(255, 241, 242, 0.90))',
+        borderRadius: '3.18mm',
       }}
     />
 
-    <div className={cn(
-      "h-full flex flex-col relative z-20 border-[0.5px] border-rose-200/50",
-      "p-1.5"
-    )}>
-      <div className="absolute inset-[1px] border border-rose-300/20 -z-10" />
+    <div 
+      className={cn(
+        "h-full flex flex-col relative z-20 border-[0.5px] border-rose-200/50",
+        "p-1.5"
+      )}
+      style={{ borderRadius: '3mm' }}
+    >
+      <div className="absolute inset-[1px] border border-rose-300/20 -z-10" style={{ borderRadius: '2.8mm' }} />
       <ChineseCorner position="top-left" />
       <ChineseCorner position="top-right" />
       <ChineseCorner position="bottom-left" />
@@ -273,6 +278,7 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
       colorScheme: 'light',
       boxSizing: 'border-box',
       imageRendering: 'high-quality',
+      borderRadius: '3.18mm', // CR-80 standard rounded corners (approx R3)
     }}
     className={cn(
       "relative bg-[#fff1f2] overflow-hidden border-[1px] border-rose-200 text-slate-900 select-none box-border id-card-output",
@@ -284,14 +290,18 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
       className="absolute inset-0 z-0" 
       style={{ 
         background: 'linear-gradient(to bottom, rgba(255, 241, 242, 0.5), rgba(255, 241, 242, 0.7))',
+        borderRadius: '3.18mm',
       }}
     />
 
-    <div className={cn(
-      "h-full flex flex-col relative z-20 border-[0.5px] border-rose-200/50",
-      "p-1.5"
-    )}>
-      <div className="absolute inset-[1px] border border-rose-300/20 -z-10" />
+    <div 
+      className={cn(
+        "h-full flex flex-col relative z-20 border-[0.5px] border-rose-200/50",
+        "p-1.5"
+      )}
+      style={{ borderRadius: '3mm' }}
+    >
+      <div className="absolute inset-[1px] border border-rose-300/20 -z-10" style={{ borderRadius: '2.8mm' }} />
       <div 
         className="absolute inset-0 -z-20 bg-[#fff1f2]"
         style={{
@@ -586,80 +596,80 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
   const valLen = value ? value.length : 0;
   const subValLen = subValue ? subValue.length : 0;
 
-  // Determine dynamic font size for the value
-  let dynamicValueFontSize = '12px';
+  // Determine dynamic font size for the value - optimized for clear vector print readability (increased by ~15%)
+  let dynamicValueFontSize = '13.5px';
   if (isSingleLineOnly || isLarge) {
     // Specifically for Nama, Vihara, or other prominent fields
     if (valLen <= 3) {
-      dynamicValueFontSize = forceSmall ? '16px' : '17px';
+      dynamicValueFontSize = forceSmall ? '18.5px' : '19.5px';
     } else if (valLen <= 6) {
-      dynamicValueFontSize = forceSmall ? '14.5px' : '15.5px';
+      dynamicValueFontSize = forceSmall ? '16.5px' : '17.5px';
     } else if (valLen <= 10) {
-      dynamicValueFontSize = forceSmall ? '13px' : '14px';
+      dynamicValueFontSize = forceSmall ? '14.8px' : '15.8px';
     } else if (valLen <= 15) {
-      dynamicValueFontSize = forceSmall ? '11.5px' : '12.5px';
+      dynamicValueFontSize = forceSmall ? '13.2px' : '14.2px';
     } else if (valLen <= 20) {
-      dynamicValueFontSize = forceSmall ? '10px' : '11px';
+      dynamicValueFontSize = forceSmall ? '11.5px' : '12.5px';
     } else if (valLen <= 25) {
-      dynamicValueFontSize = forceSmall ? '8.5px' : '9.5px';
+      dynamicValueFontSize = forceSmall ? '10.0px' : '11.0px';
     } else if (valLen <= 30) {
-      dynamicValueFontSize = forceSmall ? '7.5px' : '8.5px';
+      dynamicValueFontSize = forceSmall ? '8.8px' : '9.8px';
     } else {
-      dynamicValueFontSize = forceSmall ? '6.5px' : '7.5px';
+      dynamicValueFontSize = forceSmall ? '7.8px' : '8.8px';
     }
   } else if (isDate) {
     const lines = value ? value.split('\n') : [];
     const maxLineLen = lines.reduce((max, line) => Math.max(max, line.length), 0);
     if (maxLineLen > 25) {
-      dynamicValueFontSize = forceSmall ? '8px' : '9px';
+      dynamicValueFontSize = forceSmall ? '9.2px' : '10.2px';
     } else if (maxLineLen > 18) {
-      dynamicValueFontSize = forceSmall ? '9.5px' : '10.5px';
+      dynamicValueFontSize = forceSmall ? '10.8px' : '11.8px';
     } else if (maxLineLen > 12) {
-      dynamicValueFontSize = forceSmall ? '10.5px' : '11.5px';
+      dynamicValueFontSize = forceSmall ? '12.0px' : '13.0px';
     } else {
-      dynamicValueFontSize = forceSmall ? '11.5px' : '12.5px';
+      dynamicValueFontSize = forceSmall ? '13.0px' : '14.0px';
     }
   } else {
     // Other smaller fields
     if (valLen <= 4) {
-      dynamicValueFontSize = forceSmall ? '13px' : '14px';
+      dynamicValueFontSize = forceSmall ? '15.0px' : '16.0px';
     } else if (valLen <= 8) {
-      dynamicValueFontSize = forceSmall ? '12px' : '13px';
+      dynamicValueFontSize = forceSmall ? '13.8px' : '14.8px';
     } else if (valLen <= 14) {
-      dynamicValueFontSize = forceSmall ? '11px' : '12px';
+      dynamicValueFontSize = forceSmall ? '12.5px' : '13.5px';
     } else if (valLen <= 20) {
-      dynamicValueFontSize = forceSmall ? '9.5px' : '10.5px';
+      dynamicValueFontSize = forceSmall ? '11.0px' : '12.0px';
     } else {
-      dynamicValueFontSize = forceSmall ? '8px' : '9px';
+      dynamicValueFontSize = forceSmall ? '9.5px' : '10.5px';
     }
   }
 
-  // Determine dynamic font size for the subValue (usually Chinese block/pinyin text)
-  let dynamicSubValueFontSize = '10px';
+  // Determine dynamic font size for the subValue (usually Chinese block/pinyin text) - increased for print readability
+  let dynamicSubValueFontSize = '11px';
   if (subValue) {
     if (isSingleLineOnly || isLarge) {
       if (subValLen <= 4) {
-        dynamicSubValueFontSize = forceSmall ? '12.5px' : '13.5px';
+        dynamicSubValueFontSize = forceSmall ? '14.0px' : '15.0px';
       } else if (subValLen <= 8) {
-        dynamicSubValueFontSize = forceSmall ? '11px' : '12px';
+        dynamicSubValueFontSize = forceSmall ? '12.5px' : '13.5px';
       } else if (subValLen <= 14) {
-        dynamicSubValueFontSize = forceSmall ? '9.5px' : '10.5px';
+        dynamicSubValueFontSize = forceSmall ? '11.0px' : '12.0px';
       } else if (subValLen <= 20) {
-        dynamicSubValueFontSize = forceSmall ? '8.5px' : '9.5px';
+        dynamicSubValueFontSize = forceSmall ? '10.0px' : '11.0px';
       } else if (subValLen <= 28) {
-        dynamicSubValueFontSize = forceSmall ? '7.5px' : '8.5px';
+        dynamicSubValueFontSize = forceSmall ? '8.8px' : '9.8px';
       } else {
-        dynamicSubValueFontSize = forceSmall ? '6.5px' : '7.5px';
+        dynamicSubValueFontSize = forceSmall ? '7.8px' : '8.8px';
       }
     } else {
       if (subValLen <= 6) {
-        dynamicSubValueFontSize = forceSmall ? '10px' : '11px';
+        dynamicSubValueFontSize = forceSmall ? '11.5px' : '12.5px';
       } else if (subValLen <= 12) {
-        dynamicSubValueFontSize = forceSmall ? '9px' : '10px';
+        dynamicSubValueFontSize = forceSmall ? '10.5px' : '11.5px';
       } else if (subValLen <= 18) {
-        dynamicSubValueFontSize = forceSmall ? '8px' : '9px';
+        dynamicSubValueFontSize = forceSmall ? '9.2px' : '10.2px';
       } else {
-        dynamicSubValueFontSize = forceSmall ? '7px' : '8px';
+        dynamicSubValueFontSize = forceSmall ? '8.2px' : '9.2px';
       }
     }
   }
@@ -679,17 +689,17 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
       )}>
         {chLabel && (
           <span 
-            className={cn("font-dfkai font-black text-rose-950 leading-none mb-0.5", forceSmall ? "text-[12px]" : "text-[14px]")}
+            className={cn("font-dfkai font-black text-rose-950 leading-none mb-0.5", forceSmall ? "text-[12.5px]" : "text-[14.5px]")}
           >
             {chLabel}
           </span>
         )}
         <span 
-          className="font-black text-rose-900/60 leading-none"
+          className="font-black text-rose-950 leading-none" // Avoid semi-transparent text colors for small labels to ensure sharp vector printing (halftone prevention)
           style={{
             fontSize: label.length > 8 
-              ? (forceSmall ? '7.5px' : '8.5px')
-              : (forceSmall ? '8.5px' : '9.5px')
+              ? (forceSmall ? '8.2px' : '9.2px')
+              : (forceSmall ? '9.2px' : '10.2px')
           }}
         >
           {label}
