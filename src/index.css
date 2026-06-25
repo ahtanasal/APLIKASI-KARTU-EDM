@@ -1,10 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Inter:wght@400;500;600&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Inter:wght@400;500;600&family=Noto+Sans+TC:wght@300;400;500;700;900&family=Noto+Serif+TC:wght@600;700;900&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Cormorant Garamond", serif;
-  --font-dfkai: "DFKai-SB", "BiauKai", "KaiTi", "STKaiti", serif;
+  --font-dfkai: "DFKai-SB", "BiauKai", "KaiTi", "STKaiti", "Noto Serif TC", serif;
   
   --color-temple-bg: #fdfaf6;
   --color-temple-wood: #5d4037;
@@ -18,9 +18,14 @@
   }
 }
 
-/* Force all text elements on ID card to use Noto Sans TC */
+/* Force all text elements on ID card to use Inter first for Latin, then Noto Sans for Chinese fallback */
 .id-card-output, .id-card-output * {
-  font-family: "Noto Sans TC", "Noto Sans Traditional Chinese", "DFKai-SB", "BiauKai", "KaiTi", sans-serif !important;
+  font-family: "Inter", "Noto Sans TC", "Noto Sans Traditional Chinese", "DFKai-SB", "BiauKai", "KaiTi", sans-serif !important;
+}
+
+/* Override Chinese font family specifically so it displays as beautiful calligraphy, while maintaining Inter for Latin text first! */
+.id-card-output .font-dfkai {
+  font-family: "Inter", "DFKai-SB", "BiauKai", "KaiTi", "STKaiti", "Noto Serif TC", serif !important;
 }
 
 

@@ -89,6 +89,29 @@ import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import { toPng } from 'html-to-image';
 
+// Safe Base64 encoding/decoding supporting UTF-8 (e.g. Chinese/Unicode characters)
+export const safeBtoa = (str: string): string => {
+  try {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (_, p1) => {
+      return String.fromCharCode(parseInt(p1, 16));
+    }));
+  } catch (e) {
+    console.error("safeBtoa error", e);
+    return "";
+  }
+};
+
+export const safeAtob = (str: string): string => {
+  try {
+    return decodeURIComponent(atob(str).split('').map((c) => {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+  } catch (e) {
+    console.error("safeAtob error", e);
+    return "";
+  }
+};
+
 // Helper to format Pandita Name (Dian Chuan Shi) based on Tao UK systems
 const formatPanditaName = (name: string): string => {
   if (!name) return "";
@@ -457,7 +480,7 @@ export default function App() {
   };
 
   const handleShareWhatsApp = (umat: Umat) => {
-    const encodedData = btoa(JSON.stringify(umat));
+    const encodedData = safeBtoa(JSON.stringify(umat));
     const shareUrl = `${window.location.origin}${window.location.pathname}?view=${encodedData}`;
     
     const text = `*KARTU IDENTITAS UMAT*\n*Vihara Eka Dharma Manggala*\n\n------------------------------\n*Data Umat*\n------------------------------\nNama: ${umat.nama}\nNo ID: ${umat.noId}\nJabatan: ${umat.jabatanSuci || '-'}\nVihara: ${umat.vihara}\n\nLihat Kartu Identitas Digital:\n${shareUrl}\n\n------------------------------\n_Data dikirim melalui Aplikasi EDM_`;
@@ -578,7 +601,7 @@ export default function App() {
     const sharedData = params.get('view');
     if (sharedData) {
       try {
-        const decoded = JSON.parse(atob(sharedData));
+        const decoded = JSON.parse(safeAtob(sharedData));
         setSelectedUmat(decoded);
       } catch (e) {
         console.error('Failed to decode shared card', e);
@@ -2380,7 +2403,7 @@ function UmatForm({
           />
 
           <div className="space-y-2">
-            <label className="text-xs font-bold text-stone-500 uppercase tracking-wider pl-1 font-sans">
+            <label className="text-xs font-medium text-stone-500 uppercase tracking-wider pl-1 font-sans">
               Waktu Memohon TAO
             </label>
             <div className="relative group">
@@ -2417,7 +2440,7 @@ function UmatForm({
           />
 
           <div className="space-y-2">
-            <label className="text-xs font-bold text-stone-500 uppercase tracking-wider pl-1 font-sans">
+            <label className="text-xs font-medium text-stone-500 uppercase tracking-wider pl-1 font-sans">
               Pilih Vihara
             </label>
             <div className="relative group">
@@ -2484,7 +2507,7 @@ function UmatForm({
             <h3 className="text-xs uppercase tracking-widest text-temple-gold font-bold">Data Pandita</h3>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-stone-500 uppercase tracking-wider pl-1 font-sans">
+              <label className="text-xs font-medium text-stone-500 uppercase tracking-wider pl-1 font-sans">
                 Pilih Pandita
               </label>
               <div className="relative group">
@@ -2564,7 +2587,7 @@ function UmatForm({
             />
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-stone-500 uppercase tracking-wider pl-1 font-sans">
+              <label className="text-xs font-medium text-stone-500 uppercase tracking-wider pl-1 font-sans">
                 Jabatan Suci
               </label>
               <div className="relative group">
@@ -2744,7 +2767,7 @@ function FormField({
 }) {
   return (
     <div className="space-y-2">
-      <label htmlFor={id} className="text-xs font-bold text-stone-500 uppercase tracking-wider pl-1 font-sans flex items-center gap-1">
+      <label htmlFor={id} className="text-xs font-medium text-stone-500 uppercase tracking-wider pl-1 font-sans flex items-center gap-1">
         {label}
         {required && <span className="text-rose-500 font-bold" title="Wajib Diisi">*</span>}
       </label>

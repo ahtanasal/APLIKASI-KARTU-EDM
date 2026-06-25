@@ -8,6 +8,7 @@ import { cn } from '../lib/utils';
 import { useDesign, CardDesignSettings } from '../contexts/DesignContext';
 import { Solar } from 'lunar-javascript';
 import { pinyin } from 'pinyin-pro';
+import { safeBtoa } from '../App';
 
 interface IdCardProps {
   data: Umat;
@@ -179,31 +180,26 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
 
     <div 
       className={cn(
-        "h-full flex flex-col relative z-20 border-[0.5px] border-rose-200/50",
+        "h-full flex flex-col relative z-20",
         "p-1.5"
       )}
       style={{ borderRadius: '3mm' }}
     >
-      <div className="absolute inset-[1px] border border-rose-300/20 -z-10" style={{ borderRadius: '2.8mm' }} />
-      <ChineseCorner position="top-left" />
-      <ChineseCorner position="top-right" />
-      <ChineseCorner position="bottom-left" />
-      <ChineseCorner position="bottom-right" />
       
       {/* Header */}
       <div className={cn(
-        "flex items-center relative h-9 px-1 bg-white/30 backdrop-blur-[1px] rounded-t-sm border-b border-rose-200/40"
+        "flex items-center relative h-[48px] px-1 bg-white/30 backdrop-blur-[1px] rounded-t-sm border-b border-rose-200/40"
       )}>
         {/* Logo container aligned with Label column (30%) */}
         <div className="w-[30%] flex items-center justify-center h-full">
-          <img src="/images/front_logo.png" alt="Logo" className="w-7 h-7 object-contain opacity-90" />
+          <img src="/images/front_logo.png" alt="Logo" className="w-[42px] h-[42px] object-contain opacity-95" />
         </div>
         {/* Text container aligned with Value column (70%) */}
         <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-0.5">
           <div className="flex items-baseline justify-center gap-1 whitespace-nowrap">
-            <p className="font-dfkai font-black text-rose-950 leading-none text-[17px]">發 一 崇 德</p>
+            <p className="font-dfkai font-bold text-rose-950 leading-none text-[21px] tracking-wide">發 一 崇 德</p>
           </div>
-          <h2 className="font-black text-rose-900 tracking-[0.1em] font-sans leading-none uppercase mt-0.5 text-[8.5px] whitespace-nowrap">FA YI CHONG DE</h2>
+          <h2 className="font-black text-rose-900 tracking-[0.1em] font-sans leading-none uppercase mt-1 text-[11px] whitespace-nowrap">FA YI CHONG DE</h2>
       
         </div>
       </div>
@@ -262,11 +258,11 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
 
 const getDynamicIdFontSize = (idStr: string) => {
   const len = idStr ? idStr.length : 0;
-  if (len <= 6) return '9.2px';
-  if (len <= 9) return '8.0px';
-  if (len <= 12) return '6.9px';
-  if (len <= 15) return '5.75px';
-  return '5.2px';
+  if (len <= 6) return '10.6px';
+  if (len <= 9) return '9.2px';
+  if (len <= 12) return '8.0px';
+  if (len <= 15) return '6.6px';
+  return '6.0px';
 };
 
 const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceSmall?: boolean, innerRef?: React.RefObject<HTMLDivElement | null>, settings: CardDesignSettings }) => (
@@ -296,12 +292,11 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
 
     <div 
       className={cn(
-        "h-full flex flex-col relative z-20 border-[0.5px] border-rose-200/50",
+        "h-full flex flex-col relative z-20",
         "p-1.5"
       )}
       style={{ borderRadius: '3mm' }}
     >
-      <div className="absolute inset-[1px] border border-rose-300/20 -z-10" style={{ borderRadius: '2.8mm' }} />
       <div 
         className="absolute inset-0 -z-20 bg-[#fff1f2]"
         style={{
@@ -315,10 +310,6 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
         }}
       />
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white/20 via-transparent to-white/30" />
-      <ChineseCorner position="top-left" />
-      <ChineseCorner position="top-right" />
-      <ChineseCorner position="bottom-left" />
-      <ChineseCorner position="bottom-right" />
 
       {/* Dynamic Name on Back if enabled */}
       {settings.showNameOnBack && (
@@ -330,12 +321,15 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
             "flex items-center gap-2 bg-white/60 backdrop-blur-[1px] rounded border border-white/40 whitespace-nowrap px-1.5 py-0.5"
           )}>
             <p 
-              className="font-dfkai font-black text-black leading-none"
+              className={cn(
+                "leading-none",
+                (/[\u4e00-\u9fa5]/.test(data.nama || data.namaIndonesia || '')) ? "font-dfkai font-bold" : "font-sans font-black"
+              )}
               style={{ 
                 fontSize: (data.nama || data.namaIndonesia).length > 20 ? '10px' : 
                           (data.nama || data.namaIndonesia).length > 15 ? '12px' : 
                           (data.nama || data.namaIndonesia).length > 10 ? '14px' : '16px',
-                fontWeight: 900
+                fontWeight: (/[\u4e00-\u9fa5]/.test(data.nama || data.namaIndonesia || '')) ? 700 : 900
               }}
             >
               {data.nama || data.namaIndonesia}
@@ -361,7 +355,7 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
 
       {/* Info and QR Code Positioned dynamically */}
       <div className={cn(
-        "absolute z-30 bg-white/70 backdrop-blur-[1px] rounded-md flex flex-col items-center gap-0.5 p-0.5 w-[48px] overflow-hidden",
+        "absolute z-30 bg-white/70 backdrop-blur-[1px] rounded-md flex flex-col items-center gap-0.5 p-0.5 w-[55px] overflow-hidden",
         settings.qrPosition === 'bottom-right' && "bottom-1.5 right-1.5",
         settings.qrPosition === 'bottom-left' && "bottom-1.5 left-1.5",
         settings.qrPosition === 'top-left' && "top-1.5 left-1.5",
@@ -369,9 +363,9 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
         settings.qrPosition === 'bottom-center' && "bottom-1.5 left-1/2 -translate-x-1/2"
       )}>
         <div className="flex items-center justify-center">
-          <QRCodeSVG value={data.noId} size={44} fgColor="#000000" />
+          <QRCodeSVG value={data.noId} size={51} fgColor="#000000" />
         </div>
-        <div className="w-[44px] select-all overflow-hidden flex items-center justify-between">
+        <div className="w-[51px] select-all overflow-hidden flex items-center justify-between">
           {Array.from(data.noId || '').map((char, idx) => (
             <span 
               key={idx}
@@ -491,9 +485,19 @@ export const IdCard: React.FC<IdCardProps> = ({ data, onClose, isFrontOnly, isBa
         handleDownload(e);
         alert('Fitur share file tidak didukung browser ini. Gambar telah didownload secara otomatis, silahkan lampirkan secara manual di WhatsApp.');
       }
-    } catch (err) {
-      console.error('Share failed', err);
-      handleWA(e);
+    } catch (err: any) {
+      const isCancel = err?.name === 'AbortError' || 
+                        err?.name === 'NotAllowedError' || 
+                        (err?.message && (
+                          err.message.toLowerCase().includes('cancel') || 
+                          err.message.toLowerCase().includes('abort')
+                        ));
+      if (isCancel) {
+        console.log('Share was canceled by the user.');
+      } else {
+        console.error('Share failed', err);
+        handleWA(e);
+      }
     } finally {
       setIsCapturing(false);
     }
@@ -501,7 +505,7 @@ export const IdCard: React.FC<IdCardProps> = ({ data, onClose, isFrontOnly, isBa
 
   const handleWA = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const encodedData = btoa(JSON.stringify(data));
+    const encodedData = safeBtoa(JSON.stringify(data));
     const shareUrl = `${window.location.origin}${window.location.pathname}?view=${encodedData}`;
     
     const text = `*KARTU IDENTITAS UMAT*\n*Vihara Eka Dharma Manggala*\n\n------------------------------\n*Data Umat*\n------------------------------\nNama: ${data.nama}\nNo ID: ${data.noId}\nJabatan: ${data.jabatanSuci || '-'}\nVihara: ${data.vihara}\n\nLihat Kartu Identitas Digital:\n${shareUrl}\n\n------------------------------\n_Data dikirim melalui Aplikasi EDM_`;
@@ -689,17 +693,22 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
       )}>
         {chLabel && (
           <span 
-            className={cn("font-dfkai font-black text-rose-950 leading-none mb-0.5", forceSmall ? "text-[12.5px]" : "text-[14.5px]")}
+            className={cn("font-dfkai font-bold text-rose-950 leading-none mb-0.5", forceSmall ? "text-[12.5px]" : "text-[14.5px]")}
           >
             {chLabel}
           </span>
         )}
         <span 
-          className="font-black text-rose-950 leading-none" // Avoid semi-transparent text colors for small labels to ensure sharp vector printing (halftone prevention)
+          className="font-black text-rose-950 leading-none whitespace-nowrap" // Avoid semi-transparent text colors for small labels to ensure sharp vector printing (halftone prevention)
           style={{
-            fontSize: label.length > 8 
-              ? (forceSmall ? '8.2px' : '9.2px')
-              : (forceSmall ? '9.2px' : '10.2px')
+            fontSize: label.length > 9 
+              ? (forceSmall ? '6.8px' : '7.8px')
+              : label.length > 7
+              ? (forceSmall ? '7.6px' : '8.6px')
+              : label.length > 5
+              ? (forceSmall ? '8.3px' : '9.3px')
+              : (forceSmall ? '9.2px' : '10.2px'),
+            letterSpacing: label.length > 7 ? '-0.04em' : '-0.01em'
           }}
         >
           {label}
@@ -710,25 +719,31 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
       <div className={cn("flex-1 flex flex-col justify-center min-w-0 bg-white/10", forceSmall ? "px-1 py-0" : "px-1.5 py-0.5")}>
         <p 
           className={cn(
-            "text-black leading-tight uppercase animate-fade-in font-black",
-            hasChineseValue ? "font-dfkai" : "font-sans",
+            "text-black leading-tight uppercase animate-fade-in",
+            hasChineseValue ? "font-dfkai font-bold" : "font-sans font-black",
             isCentered && "text-center",
             isSingleLineOnly ? "whitespace-nowrap overflow-hidden text-ellipsis" : "whitespace-pre-wrap"
           )}
-          style={{ fontSize: dynamicValueFontSize, fontWeight: 900 }}
+          style={{ 
+            fontSize: dynamicValueFontSize, 
+            fontWeight: hasChineseValue ? 700 : 900 
+          }}
         >
           {value || '-'}
         </p>
         {subValue && (
           <p 
             className={cn(
-              "text-black leading-tight uppercase animate-fade-in font-black",
-              hasChineseSubValue ? "font-dfkai" : "font-sans",
+              "text-black leading-tight uppercase animate-fade-in",
+              hasChineseSubValue ? "font-dfkai font-bold" : "font-sans font-black",
               isCentered && "text-center",
               isSingleLineOnly ? "whitespace-nowrap overflow-hidden text-ellipsis" : "whitespace-pre-wrap",
               forceSmall ? "mt-0" : "mt-0.5"
             )}
-            style={{ fontSize: dynamicSubValueFontSize, fontWeight: 900 }}
+            style={{ 
+              fontSize: dynamicSubValueFontSize, 
+              fontWeight: hasChineseSubValue ? 700 : 900 
+            }}
           >
             {subValue}
           </p>
