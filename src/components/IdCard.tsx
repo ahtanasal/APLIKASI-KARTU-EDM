@@ -98,18 +98,18 @@ const formatLunarNumbers = (str: string): string => {
 
 const getLunarDateFallback = (masehi: string, lunarDate?: string, waktu?: string) => {
   if (lunarDate && /[\u4e00-\u9fa5]/.test(lunarDate)) {
-    return formatLunarNumbers(lunarDate);
+    return formatLunarNumbers(lunarDate).replace(/时/g, '時');
   }
-  if (!masehi) return formatLunarNumbers(lunarDate || '');
+  if (!masehi) return formatLunarNumbers((lunarDate || '').replace(/时/g, '時'));
   try {
     const parts = masehi.split("-");
-    if (parts.length !== 3) return formatLunarNumbers(lunarDate || '');
+    if (parts.length !== 3) return formatLunarNumbers((lunarDate || '').replace(/时/g, '時'));
     
     const day = parseInt(parts[0], 10);
     const month = parseInt(parts[1], 10);
     const year = parseInt(parts[2], 10);
     
-    if (isNaN(day) || isNaN(month) || isNaN(year)) return formatLunarNumbers(lunarDate || '');
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return formatLunarNumbers((lunarDate || '').replace(/时/g, '時'));
     
     const solar = Solar.fromYmd(year, month, day);
     const lunar = solar.getLunar();
@@ -122,10 +122,10 @@ const getLunarDateFallback = (masehi: string, lunarDate?: string, waktu?: string
         res += ` ${match[1]}`;
       }
     }
-    return formatLunarNumbers(res);
+    return formatLunarNumbers(res.replace(/时/g, '時'));
   } catch (e) {
     console.error("Lunar conversion error in IdCard:", e);
-    return formatLunarNumbers(lunarDate || '');
+    return formatLunarNumbers((lunarDate || '').replace(/时/g, '時'));
   }
 };
 

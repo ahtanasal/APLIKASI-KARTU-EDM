@@ -72,18 +72,18 @@ import {
 } from 'firebase/firestore';
 
 const SHI_CHEN = [
-  { label: 'ZI (子时) (23:00-01:00)', value: 'ZI (子时) (23:00-01:00)' },
-  { label: 'CHOU (丑时) (01:00-03:00)', value: 'CHOU (丑时) (01:00-03:00)' },
-  { label: 'YIN (寅时) (03:00-05:00)', value: 'YIN (寅时) (03:00-05:00)' },
-  { label: 'MAO (卯时) (05:00-07:00)', value: 'MAO (卯时) (05:00-07:00)' },
-  { label: 'CHEN (辰时) (07:00-09:00)', value: 'CHEN (辰时) (07:00-09:00)' },
-  { label: 'SI (巳时) (09:00-11:00)', value: 'SI (巳时) (09:00-11:00)' },
-  { label: 'WU (午时) (11:00-13:00)', value: 'WU (午时) (11:00-13:00)' },
-  { label: 'WEI (未时) (13:00-15:00)', value: 'WEI (未时) (13:00-15:00)' },
-  { label: 'SHEN (申时) (15:00-17:00)', value: 'SHEN (申时) (15:00-17:00)' },
-  { label: 'YOU (酉时) (17:00-19:00)', value: 'YOU (酉时) (17:00-19:00)' },
-  { label: 'XU (戌时) (19:00-21:00)', value: 'XU (戌时) (19:00-21:00)' },
-  { label: 'HAI (亥时) (21:00-23:00)', value: 'HAI (亥时) (21:00-23:00)' },
+  { label: 'ZI (子時) (23:00-01:00)', value: 'ZI (子時) (23:00-01:00)' },
+  { label: 'CHOU (丑時) (01:00-03:00)', value: 'CHOU (丑時) (01:00-03:00)' },
+  { label: 'YIN (寅時) (03:00-05:00)', value: 'YIN (寅時) (03:00-05:00)' },
+  { label: 'MAO (卯時) (05:00-07:00)', value: 'MAO (卯時) (05:00-07:00)' },
+  { label: 'CHEN (辰時) (07:00-09:00)', value: 'CHEN (辰時) (07:00-09:00)' },
+  { label: 'SI (巳時) (09:00-11:00)', value: 'SI (巳時) (09:00-11:00)' },
+  { label: 'WU (午時) (11:00-13:00)', value: 'WU (午時) (11:00-13:00)' },
+  { label: 'WEI (未時) (13:00-15:00)', value: 'WEI (未時) (13:00-15:00)' },
+  { label: 'SHEN (申時) (15:00-17:00)', value: 'SHEN (申時) (15:00-17:00)' },
+  { label: 'YOU (酉時) (17:00-19:00)', value: 'YOU (酉時) (17:00-19:00)' },
+  { label: 'XU (戌時) (19:00-21:00)', value: 'XU (戌時) (19:00-21:00)' },
+  { label: 'HAI (亥時) (21:00-23:00)', value: 'HAI (亥時) (21:00-23:00)' },
 ];
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
@@ -2191,14 +2191,14 @@ function UmatForm({
       let res = `${lunar.getYearInGanZhi()}年${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`;
       
       if (waktu) {
-        // Extract Mandarin character from "ZI (子时) (23:00-01:00)"
+        // Extract Mandarin character from "ZI (子時) (23:00-01:00)"
         const match = waktu.match(/\((.*?)\)/);
         if (match && match[1]) {
           res += ` ${match[1]}`;
         }
       }
       
-      return res;
+      return res.replace(/时/g, '時');
     } catch (e) {
       console.error("Lunar conversion error:", e);
       return "";
