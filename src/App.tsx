@@ -154,6 +154,7 @@ export default function App() {
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [printLayoutMode, setPrintLayoutMode] = useState<'all-fronts-first' | 'interleaved'>('all-fronts-first');
   const [printGap, setPrintGap] = useState<number>(6);
+  const [printBackRotation, setPrintBackRotation] = useState<'-90' | '90'>('-90');
   const [editingUmat, setEditingUmat] = useState<Umat | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [jabatanFilter, setJabatanFilter] = useState<string>('all');
@@ -1738,6 +1739,37 @@ export default function App() {
                     </button>
                   </div>
                 </div>
+
+                {/* Back Side Rotation Selector */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold shrink-0">Rotasi Belakang:</span>
+                  <div className="flex flex-wrap gap-1 bg-stone-950 p-1 rounded-xl border border-stone-800">
+                    <button
+                      onClick={() => setPrintBackRotation('-90')}
+                      title="Sisi belakang diputar -90 derajat (Saran untuk cetak duplex bolak-balik standard)"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1",
+                        printBackRotation === '-90'
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      -90° (Standard)
+                    </button>
+                    <button
+                      onClick={() => setPrintBackRotation('90')}
+                      title="Sisi belakang diputar +90 derajat (Jika hasil cetak terbalik)"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1",
+                        printBackRotation === '90'
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      90° (Terbalik)
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Action buttons */}
@@ -1779,7 +1811,7 @@ export default function App() {
 
             {/* Print Document Container */}
             <div ref={printContainerRef} className="py-8 print:py-0 w-full flex justify-center">
-              <PrintingView umats={umats.filter(u => selectedIds.has(u.id))} layoutMode={printLayoutMode} gap={printGap} />
+              <PrintingView umats={umats.filter(u => selectedIds.has(u.id))} layoutMode={printLayoutMode} gap={printGap} backRotation={printBackRotation} />
             </div>
           </div>
         )}
@@ -1789,7 +1821,7 @@ export default function App() {
 }
 
 // --- Printing View Component ---
-function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0 }: { umats: Umat[], layoutMode?: 'all-fronts-first' | 'interleaved', gap?: number }) {
+function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0, backRotation = '-90' }: { umats: Umat[], layoutMode?: 'all-fronts-first' | 'interleaved', gap?: number, backRotation?: '-90' | '90' }) {
   // Items per A4 page (e.g., 2 columns x 5 rows = 10 ID cards)
   const batchSize = 10;
   const batches: Umat[][] = [];
@@ -1949,7 +1981,7 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0 }: { uma
                   return <div key={`empty-front-${idx}`} className="w-[87mm] h-[56mm] opacity-0" />;
                 }
                 return (
-                  <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-visible">
+                  <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-hidden">
                     <div 
                       className="absolute"
                       style={{
@@ -1977,7 +2009,7 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0 }: { uma
                   return <div key={`empty-back-${idx}`} className="w-[87mm] h-[56mm] opacity-0" />;
                 }
                 return (
-                  <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-visible">
+                  <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-hidden">
                     <div 
                       className="absolute"
                       style={{
@@ -1985,7 +2017,7 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0 }: { uma
                         height: '87mm',
                         left: '15.5mm',
                         top: '-15.5mm',
-                        transform: 'rotate(-90deg)',
+                        transform: `rotate(${backRotation === '90' ? '90' : '-90'}deg)`,
                         transformOrigin: 'center center'
                       }}
                     >
@@ -2008,7 +2040,7 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0 }: { uma
                   return <div key={`empty-front-${idx}`} className="w-[87mm] h-[56mm] opacity-0" />;
                 }
                 return (
-                  <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-visible">
+                  <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-hidden">
                     <div 
                       className="absolute"
                       style={{
@@ -2034,7 +2066,7 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0 }: { uma
                   return <div key={`empty-back-${idx}`} className="w-[87mm] h-[56mm] opacity-0" />;
                 }
                 return (
-                  <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-visible">
+                  <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-hidden">
                     <div 
                       className="absolute"
                       style={{
@@ -2042,7 +2074,7 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0 }: { uma
                         height: '87mm',
                         left: '15.5mm',
                         top: '-15.5mm',
-                        transform: 'rotate(-90deg)',
+                        transform: `rotate(${backRotation === '90' ? '90' : '-90'}deg)`,
                         transformOrigin: 'center center'
                       }}
                     >
