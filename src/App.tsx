@@ -1917,7 +1917,7 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
                 <span>
-                  <strong>Tips Cegah Terpotong:</strong> Skala <strong>98%</strong> dan Marjin <strong>5mm</strong> diatur secara otomatis agar tepi kartu tidak terpotong oleh batas cetak fisik printer (Epson/Canon/HP). Pada dialog print browser, atur Margin ke <strong>"None" (Tanpa Margin)</strong>.
+                  <strong>Tips Presisi Cetak Bolak-Balik:</strong> Marjin halaman depan (Page 1) dan halaman belakang (Page 2) telah diset <strong>100% identik & simetris</strong>. Pada dialog cetak browser, pastikan atur Margin ke <strong>"None" (Tanpa Margin)</strong> dan Skala ke <strong>100% / 98%</strong> agar hasil cetak presisi saat kertas dibalik.
                 </span>
               </div>
               <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded whitespace-nowrap shrink-0">Mirroring Baris Diaktifkan</span>
@@ -2091,22 +2091,53 @@ function PrintingView({
 
         .a4-grid {
           display: grid;
-          grid-template-columns: repeat(2, 87mm);
+          width: 210mm;
+          grid-template-columns: 105mm 105mm;
           grid-template-rows: repeat(5, 56mm);
-          gap: ${safeGap}mm;
-          justify-content: center;
+          row-gap: ${safeGap}mm;
+          column-gap: 0mm;
+          justify-items: center;
           align-content: center;
           transform: scale(${printScale / 100});
           transform-origin: center center;
           box-sizing: border-box;
+          position: relative;
+        }
+
+        .a4-grid::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          left: 105mm;
+          width: 0;
+          border-left: 1px dashed rgba(0, 0, 0, 0.15);
+          pointer-events: none;
         }
 
         @media print {
           .a4-page { 
             margin: 0 !important; 
+            padding: 0 !important;
+            border: none !important;
             box-shadow: none !important; 
             page-break-after: always !important;
             break-after: page !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            width: 210mm !important;
+            height: 297mm !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-sizing: border-box !important;
+          }
+
+          .a4-grid {
+            width: 210mm !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+            box-sizing: border-box !important;
           }
         }
       `}</style>
