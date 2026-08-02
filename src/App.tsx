@@ -153,7 +153,9 @@ export default function App() {
   const [isPrintMode, setIsPrintMode] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [printLayoutMode, setPrintLayoutMode] = useState<'all-fronts-first' | 'interleaved'>('all-fronts-first');
-  const [printGap, setPrintGap] = useState<number>(6);
+  const [printGap, setPrintGap] = useState<number>(2);
+  const [printMargin, setPrintMargin] = useState<number>(5);
+  const [printScale, setPrintScale] = useState<number>(98);
   const [printBackRotation, setPrintBackRotation] = useState<'-90' | '90'>('-90');
   const [editingUmat, setEditingUmat] = useState<Umat | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1649,6 +1651,106 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* Print Scale Selector (Anti-Cutoff) */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <span className="text-[10px] uppercase tracking-wider text-amber-400 font-bold shrink-0 flex items-center gap-1">
+                    Skala (Anti Kepotong):
+                  </span>
+                  <div className="flex flex-wrap gap-1 bg-stone-950 p-1 rounded-xl border border-stone-800">
+                    <button
+                      onClick={() => setPrintScale(98)}
+                      title="Skala 98% memberikan marjin aman di pinggir kertas A4 agar tidak terpotong printer"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
+                        printScale === 98
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      98% (Saran Utam)
+                    </button>
+                    <button
+                      onClick={() => setPrintScale(100)}
+                      title="Skala 100% ukuran asli tanpa diperkecil"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
+                        printScale === 100
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      100% (Ukuran Asli)
+                    </button>
+                    <button
+                      onClick={() => setPrintScale(95)}
+                      title="Skala 95% memberikan marjin ekstra lebar"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
+                        printScale === 95
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      95% (Marjin Lebar)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Page Margin Selector */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold shrink-0">Marjin Halaman:</span>
+                  <div className="flex flex-wrap gap-1 bg-stone-950 p-1 rounded-xl border border-stone-800">
+                    <button
+                      onClick={() => setPrintMargin(5)}
+                      title="Marjin 5mm atas/bawah paling cocok untuk printer inkjet (Epson/Canon/HP)"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
+                        printMargin === 5
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      5mm (Aman)
+                    </button>
+                    <button
+                      onClick={() => setPrintMargin(7)}
+                      title="Marjin 7mm ekstra lebar untuk printer dengan batas cetak besar"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
+                        printMargin === 7
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      7mm (Ekstra Aman)
+                    </button>
+                    <button
+                      onClick={() => setPrintMargin(3)}
+                      title="Marjin 3mm minimal"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
+                        printMargin === 3
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      3mm (Minimal)
+                    </button>
+                    <button
+                      onClick={() => setPrintMargin(0)}
+                      title="Tanpa marjin halaman"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
+                        printMargin === 0
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      0mm
+                    </button>
+                  </div>
+                </div>
+
                 {/* Card Gap Selector */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold shrink-0">Jarak Antar Kartu:</span>
@@ -1663,7 +1765,19 @@ export default function App() {
                           : "text-stone-400 hover:text-white"
                       )}
                     >
-                      0mm
+                      0mm (Rapat)
+                    </button>
+                    <button
+                      onClick={() => setPrintGap(1)}
+                      title="Jarak tipis 1mm"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
+                        printGap === 1
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      1mm
                     </button>
                     <button
                       onClick={() => setPrintGap(2)}
@@ -1678,6 +1792,18 @@ export default function App() {
                       2mm (Saran)
                     </button>
                     <button
+                      onClick={() => setPrintGap(3)}
+                      title="Jarak 3mm"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
+                        printGap === 3
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      3mm
+                    </button>
+                    <button
                       onClick={() => setPrintGap(4)}
                       title="Jarak lebar 4mm"
                       className={cn(
@@ -1688,54 +1814,6 @@ export default function App() {
                       )}
                     >
                       4mm
-                    </button>
-                    <button
-                      onClick={() => setPrintGap(6)}
-                      title="Jarak lebar 6mm"
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
-                        printGap === 6
-                          ? "bg-amber-500 text-stone-950 shadow-md"
-                          : "text-stone-400 hover:text-white"
-                      )}
-                    >
-                      6mm (Baru)
-                    </button>
-                    <button
-                      onClick={() => setPrintGap(8)}
-                      title="Jarak lebar 8mm"
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
-                        printGap === 8
-                          ? "bg-amber-500 text-stone-950 shadow-md"
-                          : "text-stone-400 hover:text-white"
-                      )}
-                    >
-                      8mm
-                    </button>
-                    <button
-                      onClick={() => setPrintGap(10)}
-                      title="Jarak lebar 10mm"
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
-                        printGap === 10
-                          ? "bg-amber-500 text-stone-950 shadow-md"
-                          : "text-stone-400 hover:text-white"
-                      )}
-                    >
-                      10mm
-                    </button>
-                    <button
-                      onClick={() => setPrintGap(12)}
-                      title="Jarak lebar 12mm"
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
-                        printGap === 12
-                          ? "bg-amber-500 text-stone-950 shadow-md"
-                          : "text-stone-400 hover:text-white"
-                      )}
-                    >
-                      12mm
                     </button>
                   </div>
                 </div>
@@ -1803,7 +1881,7 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
                 <span>
-                  <strong>Saran Cetak Presisi (Bolak-Balik Selaras):</strong> Pada jendela print browser Anda, ubah pengaturan <strong>Margin menjadi "None" (Tanpa Margin)</strong> dan <strong>Skala menjadi "Default" (100%)</strong> agar posisi depan & belakang pas dan lurus sehingga mudah dipotong.
+                  <strong>Tips Cegah Terpotong:</strong> Skala <strong>98%</strong> dan Marjin <strong>5mm</strong> diatur secara otomatis agar tepi kartu tidak terpotong oleh batas cetak fisik printer (Epson/Canon/HP). Pada dialog print browser, atur Margin ke <strong>"None" (Tanpa Margin)</strong>.
                 </span>
               </div>
               <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded whitespace-nowrap shrink-0">Mirroring Baris Diaktifkan</span>
@@ -1811,7 +1889,7 @@ export default function App() {
 
             {/* Print Document Container */}
             <div ref={printContainerRef} className="py-8 print:py-0 w-full flex justify-center">
-              <PrintingView umats={umats.filter(u => selectedIds.has(u.id))} layoutMode={printLayoutMode} gap={printGap} backRotation={printBackRotation} />
+              <PrintingView umats={umats.filter(u => selectedIds.has(u.id))} layoutMode={printLayoutMode} gap={printGap} backRotation={printBackRotation} pageMargin={printMargin} printScale={printScale} />
             </div>
           </div>
         )}
@@ -1821,7 +1899,21 @@ export default function App() {
 }
 
 // --- Printing View Component ---
-function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0, backRotation = '-90' }: { umats: Umat[], layoutMode?: 'all-fronts-first' | 'interleaved', gap?: number, backRotation?: '-90' | '90' }) {
+function PrintingView({ 
+  umats, 
+  layoutMode = 'all-fronts-first', 
+  gap = 2, 
+  backRotation = '-90',
+  pageMargin = 5,
+  printScale = 98
+}: { 
+  umats: Umat[], 
+  layoutMode?: 'all-fronts-first' | 'interleaved', 
+  gap?: number, 
+  backRotation?: '-90' | '90',
+  pageMargin?: number,
+  printScale?: number
+}) {
   // Items per A4 page (e.g., 2 columns x 5 rows = 10 ID cards)
   const batchSize = 10;
   const batches: Umat[][] = [];
@@ -1849,8 +1941,10 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0, backRot
     ];
   };
 
-  // Limit gap to maximum 3.5mm to prevent vertical overflow of the 5-row landscape grid on 297mm A4 height
-  const safeGap = Math.min(gap, 3.5);
+  // Safe vertical gap math ensuring top/bottom pageMargin are strictly respected
+  // Total page height = 297mm. Card grid height = 280mm (5 * 56mm).
+  const maxGap = Math.max(0, (297 - 280 - (2 * pageMargin)) / 4);
+  const safeGap = Math.min(gap, maxGap);
 
   return (
     <div className="print-container font-sans bg-white p-0 md:p-8 flex flex-col items-center">
@@ -1951,16 +2045,26 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0, backRot
           break-after: page;
           page-break-inside: avoid;
           break-inside: avoid;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          box-sizing: border-box;
+          position: relative;
+        }
+
+        .a4-grid {
           display: grid;
           grid-template-columns: repeat(2, 87mm);
           grid-template-rows: repeat(5, 56mm);
           gap: ${safeGap}mm;
           justify-content: center;
           align-content: center;
-          overflow: hidden;
+          transform: scale(${printScale / 100});
+          transform-origin: center center;
           box-sizing: border-box;
-          position: relative;
         }
+
         @media print {
           .a4-page { 
             margin: 0 !important; 
@@ -1976,56 +2080,60 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0, backRot
           {/* Bagian Pertama: Semua Sisi Depan Terlebih Dahulu */}
           {batches.map((batch, bIndex) => (
             <div key={`front-page-${bIndex}`} className="a4-page">
-              {getPaddedBatch(batch).map((u, idx) => {
-                if (!u) {
-                  return <div key={`empty-front-${idx}`} className="w-[87mm] h-[56mm] opacity-0" />;
-                }
-                return (
-                  <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-hidden">
-                    <div 
-                      className="absolute"
-                      style={{
-                        width: '56mm',
-                        height: '87mm',
-                        left: '15.5mm',
-                        top: '-15.5mm',
-                        transform: 'rotate(90deg)',
-                        transformOrigin: 'center center'
-                      }}
-                    >
-                      <IdCard data={u} isFrontOnly forceSmall />
+              <div className="a4-grid">
+                {getPaddedBatch(batch).map((u, idx) => {
+                  if (!u) {
+                    return <div key={`empty-front-${idx}`} className="w-[87mm] h-[56mm] opacity-0" />;
+                  }
+                  return (
+                    <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-hidden">
+                      <div 
+                        className="absolute"
+                        style={{
+                          width: '56mm',
+                          height: '87mm',
+                          left: '15.5mm',
+                          top: '-15.5mm',
+                          transform: 'rotate(90deg)',
+                          transformOrigin: 'center center'
+                        }}
+                      >
+                        <IdCard data={u} isFrontOnly forceSmall />
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           ))}
 
           {/* Bagian Kedua: Semua Sisi Belakang Sesuai Urutan (Mirrored Horizontally) */}
           {batches.map((batch, bIndex) => (
             <div key={`back-page-${bIndex}`} className="a4-page">
-              {getMirroredBackBatch(getPaddedBatch(batch)).map((u, idx) => {
-                if (!u) {
-                  return <div key={`empty-back-${idx}`} className="w-[87mm] h-[56mm] opacity-0" />;
-                }
-                return (
-                  <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-hidden">
-                    <div 
-                      className="absolute"
-                      style={{
-                        width: '56mm',
-                        height: '87mm',
-                        left: '15.5mm',
-                        top: '-15.5mm',
-                        transform: `rotate(${backRotation === '90' ? '90' : '-90'}deg)`,
-                        transformOrigin: 'center center'
-                      }}
-                    >
-                      <IdCard data={u} isBackOnly forceSmall />
+              <div className="a4-grid">
+                {getMirroredBackBatch(getPaddedBatch(batch)).map((u, idx) => {
+                  if (!u) {
+                    return <div key={`empty-back-${idx}`} className="w-[87mm] h-[56mm] opacity-0" />;
+                  }
+                  return (
+                    <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-hidden">
+                      <div 
+                        className="absolute"
+                        style={{
+                          width: '56mm',
+                          height: '87mm',
+                          left: '15.5mm',
+                          top: '-15.5mm',
+                          transform: `rotate(${backRotation === '90' ? '90' : '-90'}deg)`,
+                          transformOrigin: 'center center'
+                        }}
+                      >
+                        <IdCard data={u} isBackOnly forceSmall />
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           ))}
         </>
@@ -2035,54 +2143,58 @@ function PrintingView({ umats, layoutMode = 'all-fronts-first', gap = 0, backRot
           <React.Fragment key={bIndex}>
             {/* Halaman Depan Batch Ini */}
             <div className="a4-page">
-              {getPaddedBatch(batch).map((u, idx) => {
-                if (!u) {
-                  return <div key={`empty-front-${idx}`} className="w-[87mm] h-[56mm] opacity-0" />;
-                }
-                return (
-                  <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-hidden">
-                    <div 
-                      className="absolute"
-                      style={{
-                        width: '56mm',
-                        height: '87mm',
-                        left: '15.5mm',
-                        top: '-15.5mm',
-                        transform: 'rotate(90deg)',
-                        transformOrigin: 'center center'
-                      }}
-                    >
-                      <IdCard data={u} isFrontOnly forceSmall />
+              <div className="a4-grid">
+                {getPaddedBatch(batch).map((u, idx) => {
+                  if (!u) {
+                    return <div key={`empty-front-${idx}`} className="w-[87mm] h-[56mm] opacity-0" />;
+                  }
+                  return (
+                    <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-hidden">
+                      <div 
+                        className="absolute"
+                        style={{
+                          width: '56mm',
+                          height: '87mm',
+                          left: '15.5mm',
+                          top: '-15.5mm',
+                          transform: 'rotate(90deg)',
+                          transformOrigin: 'center center'
+                        }}
+                      >
+                        <IdCard data={u} isFrontOnly forceSmall />
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
 
             {/* Halaman Belakang Batch Ini */}
             <div className="a4-page">
-              {getMirroredBackBatch(getPaddedBatch(batch)).map((u, idx) => {
-                if (!u) {
-                  return <div key={`empty-back-${idx}`} className="w-[87mm] h-[56mm] opacity-0" />;
-                }
-                return (
-                  <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-hidden">
-                    <div 
-                      className="absolute"
-                      style={{
-                        width: '56mm',
-                        height: '87mm',
-                        left: '15.5mm',
-                        top: '-15.5mm',
-                        transform: `rotate(${backRotation === '90' ? '90' : '-90'}deg)`,
-                        transformOrigin: 'center center'
-                      }}
-                    >
-                      <IdCard data={u} isBackOnly forceSmall />
+              <div className="a4-grid">
+                {getMirroredBackBatch(getPaddedBatch(batch)).map((u, idx) => {
+                  if (!u) {
+                    return <div key={`empty-back-${idx}`} className="w-[87mm] h-[56mm] opacity-0" />;
+                  }
+                  return (
+                    <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-hidden">
+                      <div 
+                        className="absolute"
+                        style={{
+                          width: '56mm',
+                          height: '87mm',
+                          left: '15.5mm',
+                          top: '-15.5mm',
+                          transform: `rotate(${backRotation === '90' ? '90' : '-90'}deg)`,
+                          transformOrigin: 'center center'
+                        }}
+                      >
+                        <IdCard data={u} isBackOnly forceSmall />
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </React.Fragment>
         ))
