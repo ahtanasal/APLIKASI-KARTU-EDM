@@ -155,7 +155,7 @@ export default function App() {
   const [printLayoutMode, setPrintLayoutMode] = useState<'all-fronts-first' | 'interleaved'>('all-fronts-first');
   const [printGap, setPrintGap] = useState<number>(2);
   const [printMargin, setPrintMargin] = useState<number>(5);
-  const [printScale, setPrintScale] = useState<number>(98);
+  const [printScale, setPrintScale] = useState<number>(100);
   const [printBackRotation, setPrintBackRotation] = useState<'-90' | '90'>('-90');
   const [editingUmat, setEditingUmat] = useState<Umat | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1687,27 +1687,15 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Print Scale Selector (Anti-Cutoff) */}
+                {/* Print Scale Selector (Anti-Cutoff / Exact Size) */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <span className="text-[10px] uppercase tracking-wider text-amber-400 font-bold shrink-0 flex items-center gap-1">
-                    Skala (Anti Kepotong):
+                    Skala Ukuran Kartu:
                   </span>
                   <div className="flex flex-wrap gap-1 bg-stone-950 p-1 rounded-xl border border-stone-800">
                     <button
-                      onClick={() => setPrintScale(98)}
-                      title="Skala 98% memberikan marjin aman di pinggir kertas A4 agar tidak terpotong printer"
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
-                        printScale === 98
-                          ? "bg-amber-500 text-stone-950 shadow-md"
-                          : "text-stone-400 hover:text-white"
-                      )}
-                    >
-                      98% (Saran Utam)
-                    </button>
-                    <button
                       onClick={() => setPrintScale(100)}
-                      title="Skala 100% ukuran asli tanpa diperkecil"
+                      title="Skala 100% Presisi Ukuran Standar CR80 (85.6 mm x 54 mm)"
                       className={cn(
                         "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
                         printScale === 100
@@ -1715,7 +1703,19 @@ export default function App() {
                           : "text-stone-400 hover:text-white"
                       )}
                     >
-                      100% (Ukuran Asli)
+                      100% (Presisi 85.6 x 54 mm)
+                    </button>
+                    <button
+                      onClick={() => setPrintScale(98)}
+                      title="Skala 98% memberikan marjin aman jika printer memotong tepi kertas"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
+                        printScale === 98
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      98% (SaranPrinterTepi)
                     </button>
                     <button
                       onClick={() => setPrintScale(95)}
@@ -1917,7 +1917,7 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
                 <span>
-                  <strong>Tips Presisi Cetak Bolak-Balik:</strong> Marjin halaman depan (Page 1) dan halaman belakang (Page 2) telah diset <strong>100% identik & simetris</strong>. Pada dialog cetak browser, pastikan atur Margin ke <strong>"None" (Tanpa Margin)</strong> dan Skala ke <strong>100% / 98%</strong> agar hasil cetak presisi saat kertas dibalik.
+                  <strong>Tips Cetak Presisi 85.6 mm x 54 mm (Standard CR80):</strong> Pilihan Skala telah diset ke <strong>100% (Presisi)</strong>. Pada dialog cetak browser (Ctrl+P / Cmd+P), pastikan atur <strong>Margin: "None" (Tanpa Margin)</strong> dan <strong>Scale: 100% / Default (Tanpa Fit to Printable Area / Sesuaikan Halaman)</strong> agar fisik kartu tercetak tepat 85.6 mm x 54 mm.
                 </span>
               </div>
               <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded whitespace-nowrap shrink-0">Mirroring Baris Diaktifkan</span>
@@ -1941,7 +1941,7 @@ function PrintingView({
   gap = 2, 
   backRotation = '-90',
   pageMargin = 5,
-  printScale = 98
+  printScale = 100
 }: { 
   umats: Umat[], 
   layoutMode?: 'all-fronts-first' | 'interleaved', 
@@ -1978,8 +1978,8 @@ function PrintingView({
   };
 
   // Safe vertical gap math ensuring top/bottom pageMargin are strictly respected
-  // Total page height = 297mm. Card grid height = 280mm (5 * 56mm).
-  const maxGap = Math.max(0, (297 - 280 - (2 * pageMargin)) / 4);
+  // Total page height = 297mm. Card grid height = 270mm (5 * 54mm).
+  const maxGap = Math.max(0, (297 - 270 - (2 * pageMargin)) / 4);
   const safeGap = Math.min(gap, maxGap);
 
   return (
@@ -2093,7 +2093,7 @@ function PrintingView({
           display: grid;
           width: 210mm;
           grid-template-columns: 105mm 105mm;
-          grid-template-rows: repeat(5, 56mm);
+          grid-template-rows: repeat(5, 54mm);
           row-gap: ${safeGap}mm;
           column-gap: 0mm;
           justify-items: center;
@@ -2150,17 +2150,17 @@ function PrintingView({
               <div className="a4-grid">
                 {getPaddedBatch(batch).map((u, idx) => {
                   if (!u) {
-                    return <div key={`empty-front-${idx}`} className="w-[87mm] h-[56mm] opacity-0" />;
+                    return <div key={`empty-front-${idx}`} className="w-[85.6mm] h-[54mm] opacity-0" />;
                   }
                   return (
-                    <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-hidden">
+                    <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[85.6mm] h-[54mm] overflow-hidden">
                       <div 
                         className="absolute"
                         style={{
-                          width: '56mm',
-                          height: '87mm',
-                          left: '15.5mm',
-                          top: '-15.5mm',
+                          width: '54mm',
+                          height: '85.6mm',
+                          left: '15.8mm',
+                          top: '-15.8mm',
                           transform: 'rotate(90deg)',
                           transformOrigin: 'center center'
                         }}
@@ -2180,17 +2180,17 @@ function PrintingView({
               <div className="a4-grid">
                 {getMirroredBackBatch(getPaddedBatch(batch)).map((u, idx) => {
                   if (!u) {
-                    return <div key={`empty-back-${idx}`} className="w-[87mm] h-[56mm] opacity-0" />;
+                    return <div key={`empty-back-${idx}`} className="w-[85.6mm] h-[54mm] opacity-0" />;
                   }
                   return (
-                    <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-hidden">
+                    <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[85.6mm] h-[54mm] overflow-hidden">
                       <div 
                         className="absolute"
                         style={{
-                          width: '56mm',
-                          height: '87mm',
-                          left: '15.5mm',
-                          top: '-15.5mm',
+                          width: '54mm',
+                          height: '85.6mm',
+                          left: '15.8mm',
+                          top: '-15.8mm',
                           transform: `rotate(${backRotation === '90' ? '90' : '-90'}deg)`,
                           transformOrigin: 'center center'
                         }}
@@ -2213,17 +2213,17 @@ function PrintingView({
               <div className="a4-grid">
                 {getPaddedBatch(batch).map((u, idx) => {
                   if (!u) {
-                    return <div key={`empty-front-${idx}`} className="w-[87mm] h-[56mm] opacity-0" />;
+                    return <div key={`empty-front-${idx}`} className="w-[85.6mm] h-[54mm] opacity-0" />;
                   }
                   return (
-                    <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-hidden">
+                    <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[85.6mm] h-[54mm] overflow-hidden">
                       <div 
                         className="absolute"
                         style={{
-                          width: '56mm',
-                          height: '87mm',
-                          left: '15.5mm',
-                          top: '-15.5mm',
+                          width: '54mm',
+                          height: '85.6mm',
+                          left: '15.8mm',
+                          top: '-15.8mm',
                           transform: 'rotate(90deg)',
                           transformOrigin: 'center center'
                         }}
@@ -2241,17 +2241,17 @@ function PrintingView({
               <div className="a4-grid">
                 {getMirroredBackBatch(getPaddedBatch(batch)).map((u, idx) => {
                   if (!u) {
-                    return <div key={`empty-back-${idx}`} className="w-[87mm] h-[56mm] opacity-0" />;
+                    return <div key={`empty-back-${idx}`} className="w-[85.6mm] h-[54mm] opacity-0" />;
                   }
                   return (
-                    <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[87mm] h-[56mm] overflow-hidden">
+                    <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[85.6mm] h-[54mm] overflow-hidden">
                       <div 
                         className="absolute"
                         style={{
-                          width: '56mm',
-                          height: '87mm',
-                          left: '15.5mm',
-                          top: '-15.5mm',
+                          width: '54mm',
+                          height: '85.6mm',
+                          left: '15.8mm',
+                          top: '-15.8mm',
                           transform: `rotate(${backRotation === '90' ? '90' : '-90'}deg)`,
                           transformOrigin: 'center center'
                         }}

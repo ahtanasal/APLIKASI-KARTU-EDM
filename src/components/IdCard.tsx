@@ -153,8 +153,8 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
   <div
     ref={innerRef}
     style={{ 
-      width: '56mm', 
-      height: '87mm',
+      width: '54mm', 
+      height: '85.6mm',
       backgroundImage: `url(${settings.frontBg})`,
       backgroundSize: '95%',
       backgroundPosition: 'center 55%',
@@ -276,8 +276,8 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
   <div
     ref={innerRef}
     style={{ 
-      width: '56mm', 
-      height: '87mm',
+      width: '54mm', 
+      height: '85.6mm',
       colorScheme: 'light',
       boxSizing: 'border-box',
       imageRendering: 'high-quality',
