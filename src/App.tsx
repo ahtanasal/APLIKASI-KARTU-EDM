@@ -123,7 +123,7 @@ const formatPanditaName = (name: string): string => {
     return trimmed[0] + "點傳師" + trimmed.slice(1);
   }
 
-  // Case B: 3 words separated by spaces (e.g., "Zhang Cen Chiu" or "Tan Kim San")
+  // Case B: 3 words separated by spaces (e.g., "Zhang Zhen Qiu" or "Tan Kim San")
   const words = trimmed.split(/\s+/).filter(Boolean);
   if (words.length === 3) {
     return `${words[0]} 點傳師 ${words[1]} ${words[2]}`;
@@ -211,15 +211,21 @@ export default function App() {
     const loadLocalPanditasFallback = () => {
       const localSaved = localStorage.getItem('edm_master_panditas');
       let initial = [
-        { name: '林點傳師碧蓮', pinyin: 'Pandita Lim Pi Lien' },
-        { name: '張點傳師珍球', pinyin: 'Pandita Zhang Cen Chiu' },
-        { name: '許點傳師媽源', pinyin: 'Pandita Xi Ma Yen' }
+        { name: '林點傳師碧蓮', pinyin: 'Pandita LIN BI LIEN' },
+        { name: '張點傳師珍球', pinyin: 'Pandita ZHANG ZHEN QIU' },
+        { name: '許點傳師媽源', pinyin: 'Pandita XU MA YUAN' }
       ];
       if (localSaved) {
         try {
           const parsed = JSON.parse(localSaved);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            initial = parsed;
+            initial = parsed.map((p: any) => ({
+              ...p,
+              pinyin: (p.pinyin || '')
+                .replace(/lim\s*pi\s*lien/gi, 'LIN BI LIEN')
+                .replace(/zhang\s*cen\s*chiu/gi, 'ZHANG ZHEN QIU')
+                .replace(/xi\s*ma\s*yen/gi, 'XU MA YUAN')
+            }));
           }
         } catch (e) {}
       }
@@ -230,7 +236,14 @@ export default function App() {
     const unsubscribeUmats = onSnapshot(collection(db, 'umats'), (snapshot) => {
       const list: Umat[] = [];
       snapshot.forEach((doc) => {
-        list.push(doc.data() as Umat);
+        const item = doc.data() as Umat;
+        if (item.panditaPinyin) {
+          item.panditaPinyin = item.panditaPinyin
+            .replace(/lim\s*pi\s*lien/gi, 'LIN BI LIEN')
+            .replace(/zhang\s*cen\s*chiu/gi, 'ZHANG ZHEN QIU')
+            .replace(/xi\s*ma\s*yen/gi, 'XU MA YUAN');
+        }
+        list.push(item);
       });
       list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       
@@ -316,20 +329,43 @@ export default function App() {
     // 3. Sync Master Panditas
     const unsubscribePanditas = onSnapshot(doc(db, 'metadata', 'panditas'), (snapshot) => {
       if (snapshot.exists()) {
-        setMasterPanditas(snapshot.data().list || []);
+        const rawList: { name: string, pinyin: string }[] = snapshot.data().list || [];
+        let needsUpdate = false;
+        const updatedList = rawList.map(p => {
+          const oldP = p.pinyin || '';
+          const newP = oldP
+            .replace(/lim\s*pi\s*lien/gi, 'LIN BI LIEN')
+            .replace(/zhang\s*cen\s*chiu/gi, 'ZHANG ZHEN QIU')
+            .replace(/xi\s*ma\s*yen/gi, 'XU MA YUAN');
+          if (newP !== oldP) needsUpdate = true;
+          return { ...p, pinyin: newP };
+        });
+
+        setMasterPanditas(updatedList);
+        if (needsUpdate) {
+          try {
+            setDoc(doc(db, 'metadata', 'panditas'), { list: updatedList });
+          } catch (err: any) {}
+        }
       } else {
         // Fallback to local storage or defaults, then seed
         const localSaved = localStorage.getItem('edm_master_panditas');
         let initial = [
-          { name: '林點傳師碧蓮', pinyin: 'Pandita Lim Pi Lien' },
-          { name: '張點傳師珍球', pinyin: 'Pandita Zhang Cen Chiu' },
-          { name: '許點傳師媽源', pinyin: 'Pandita Xi Ma Yen' }
+          { name: '林點傳師碧蓮', pinyin: 'Pandita LIN BI LIEN' },
+          { name: '張點傳師珍球', pinyin: 'Pandita ZHANG ZHEN QIU' },
+          { name: '許點傳師媽源', pinyin: 'Pandita XU MA YUAN' }
         ];
         if (localSaved) {
           try {
             const parsed = JSON.parse(localSaved);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              initial = parsed;
+              initial = parsed.map((p: any) => ({
+                ...p,
+                pinyin: (p.pinyin || '')
+                  .replace(/lim\s*pi\s*lien/gi, 'LIN BI LIEN')
+                  .replace(/zhang\s*cen\s*chiu/gi, 'ZHANG ZHEN QIU')
+                  .replace(/xi\s*ma\s*yen/gi, 'XU MA YUAN')
+              }));
             }
           } catch (e) {}
         }

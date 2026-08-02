@@ -195,12 +195,19 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
           <img src="/images/front_logo.png" alt="Logo" className="w-[42px] h-[42px] object-contain opacity-95" />
         </div>
         {/* Text container aligned with Value column (70%) */}
-        <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-0.5">
-          <div className="flex items-baseline justify-center gap-1 whitespace-nowrap">
-            <p className="font-dfkai font-bold text-rose-950 leading-none text-[21px] tracking-wide">發 一 崇 德</p>
+        <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-0.5 px-2">
+          <div className="w-full flex justify-between items-center font-dfkai font-bold text-rose-950 text-[19px] leading-none">
+            <span>發</span>
+            <span>一</span>
+            <span>崇</span>
+            <span>德</span>
           </div>
-          <h2 className="font-black text-rose-900 tracking-[0.1em] font-sans leading-none uppercase mt-1 text-[11px] whitespace-nowrap">FA YI CHONG DE</h2>
-      
+          <div className="w-full flex justify-between items-center font-black text-rose-900 text-[9.5px] font-sans leading-none uppercase mt-1">
+            <span>FA</span>
+            <span>YI</span>
+            <span>CHONG</span>
+            <span>DE</span>
+          </div>
         </div>
       </div>
 

@@ -28,7 +28,7 @@ const SAMPLE_DATA: Umat = {
   tanggalMasehi: '14-05-2024',
   tanggalLunar: '甲辰年四月初七',
   pandita: '林點傳師碧蓮',
-  panditaPinyin: 'PANDITA LIM PI LIEN',
+  panditaPinyin: 'PANDITA LIN BI LIEN',
   pengajak: 'Pengajak',
   pengajakPinyin: 'PENGAJAK',
   penanggung: 'Penanggung',

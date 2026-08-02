@@ -86,7 +86,7 @@ const formatPanditaName = (name: string): string => {
     return trimmed[0] + "點傳師" + trimmed.slice(1);
   }
 
-  // Case B: 3 words separated by spaces (e.g., "Zhang Cen Chiu" or "Tan Kim San")
+  // Case B: 3 words separated by spaces (e.g., "Zhang Zhen Qiu" or "Tan Kim San")
   const words = trimmed.split(/\s+/).filter(Boolean);
   if (words.length === 3) {
     return `${words[0]} 點傳師 ${words[1]} ${words[2]}`;
