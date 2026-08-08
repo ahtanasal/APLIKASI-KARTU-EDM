@@ -154,6 +154,54 @@ const getPinyinFallback = (mandarinText: string, currentPinyin: string | undefin
   return (currentPinyin || '').trim().toUpperCase();
 };
 
+const getFittedFontSize = (text: string, baseFontSize: number, maxSpaceWidth: number = 116, minFontSize: number = 4.8): { fontSize: string, letterSpacing: string } => {
+  if (!text) return { fontSize: `${baseFontSize}px`, letterSpacing: 'normal' };
+
+  let effectiveLen = 0;
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if (/[\u4e00-\u9fa5]/.test(char)) {
+      effectiveLen += 1.00; // Chinese character ~ 1.0em
+    } else if (/[A-Z]/.test(char)) {
+      effectiveLen += 0.68; // Uppercase Latin letter ~ 0.68em (prevents uppercase text like PANDITA from overflowing)
+    } else if (/[a-z0-9]/.test(char)) {
+      effectiveLen += 0.52; // Lowercase & digits ~ 0.52em
+    } else {
+      effectiveLen += 0.30; // Spaces, hyphens, punctuation ~ 0.30em
+    }
+  }
+
+  if (effectiveLen <= 0) return { fontSize: `${baseFontSize}px`, letterSpacing: 'normal' };
+
+  // Calculate estimated width at standard/base font size
+  const estimatedWidth = effectiveLen * baseFontSize;
+
+  // If text fits comfortably inside maxSpaceWidth, KEEP the base font size!
+  if (estimatedWidth <= maxSpaceWidth) {
+    return { fontSize: `${baseFontSize}px`, letterSpacing: 'normal' };
+  }
+
+  // Calculate reduced font size to fit inside maxSpaceWidth
+  let letterSpacing = 'normal';
+  let calculatedSize = maxSpaceWidth / effectiveLen;
+
+  if (effectiveLen > 20) {
+    letterSpacing = '-0.035em';
+    calculatedSize = maxSpaceWidth / (effectiveLen * 0.93);
+  } else if (effectiveLen > 14) {
+    letterSpacing = '-0.025em';
+    calculatedSize = maxSpaceWidth / (effectiveLen * 0.95);
+  } else if (effectiveLen > 9) {
+    letterSpacing = '-0.015em';
+  }
+
+  const finalSize = Math.max(minFontSize, Math.min(baseFontSize, calculatedSize));
+  return {
+    fontSize: `${finalSize.toFixed(1)}px`,
+    letterSpacing
+  };
+};
+
 const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceSmall?: boolean, innerRef?: React.RefObject<HTMLDivElement | null>, settings: CardDesignSettings }) => (
   <div
     ref={innerRef}
@@ -621,131 +669,34 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
   const hasChineseValue = value ? /[\u4e00-\u9fa5]/.test(value) : false;
   const hasChineseSubValue = subValue ? /[\u4e00-\u9fa5]/.test(subValue) : false;
 
-  // Determine dynamic font size for the value - optimized to maximize font size in available card space without wrapping
-  let dynamicValueFontSize = '14.5px';
+  // Dynamic font sizing: keep standard/large size when text fits, scale down ONLY when text exceeds available space (132px)
+  let baseValueSize = 16.5;
   if (isMasehi) {
-    const chineseCount = (value.match(/[\u4e00-\u9fa5]/g) || []).length;
-    const asciiCount = valLen - chineseCount;
-    const effectiveLen = chineseCount * 1.85 + asciiCount;
-
-    if (effectiveLen <= 8) {
-      dynamicValueFontSize = forceSmall ? '15.5px' : '16.5px';
-    } else if (effectiveLen <= 12) {
-      dynamicValueFontSize = forceSmall ? '13.8px' : '14.8px';
-    } else if (effectiveLen <= 16) {
-      dynamicValueFontSize = forceSmall ? '12.2px' : '13.2px';
-    } else if (effectiveLen <= 20) {
-      dynamicValueFontSize = forceSmall ? '11.0px' : '11.8px';
-    } else if (effectiveLen <= 25) {
-      dynamicValueFontSize = forceSmall ? '9.8px' : '10.5px';
-    } else if (effectiveLen <= 30) {
-      dynamicValueFontSize = forceSmall ? '9.0px' : '9.6px';
-    } else if (effectiveLen <= 36) {
-      dynamicValueFontSize = forceSmall ? '8.3px' : '8.8px';
-    } else {
-      dynamicValueFontSize = forceSmall ? '7.8px' : '8.2px';
-    }
+    baseValueSize = forceSmall ? 14.5 : 15.5;
   } else if (hasChineseValue) {
-    if (valLen <= 4) {
-      dynamicValueFontSize = forceSmall ? '19.5px' : '20.5px';
-    } else if (valLen <= 7) {
-      dynamicValueFontSize = forceSmall ? '17.5px' : '18.5px';
-    } else if (valLen <= 10) {
-      dynamicValueFontSize = forceSmall ? '15.8px' : '16.8px';
-    } else if (valLen <= 14) {
-      dynamicValueFontSize = forceSmall ? '14.2px' : '15.2px';
-    } else if (valLen <= 18) {
-      dynamicValueFontSize = forceSmall ? '12.8px' : '13.8px';
-    } else {
-      dynamicValueFontSize = forceSmall ? '11.2px' : '12.2px';
-    }
+    baseValueSize = forceSmall ? 18.0 : 19.5;
   } else if (isSingleLineOnly || isLarge) {
-    if (valLen <= 3) {
-      dynamicValueFontSize = forceSmall ? '20.0px' : '21.0px';
-    } else if (valLen <= 6) {
-      dynamicValueFontSize = forceSmall ? '18.5px' : '19.5px';
-    } else if (valLen <= 10) {
-      dynamicValueFontSize = forceSmall ? '17.0px' : '18.0px';
-    } else if (valLen <= 15) {
-      dynamicValueFontSize = forceSmall ? '15.5px' : '16.5px';
-    } else if (valLen <= 20) {
-      dynamicValueFontSize = forceSmall ? '14.0px' : '15.0px';
-    } else if (valLen <= 25) {
-      dynamicValueFontSize = forceSmall ? '12.5px' : '13.5px';
-    } else if (valLen <= 30) {
-      dynamicValueFontSize = forceSmall ? '11.0px' : '12.0px';
-    } else {
-      dynamicValueFontSize = forceSmall ? '9.5px' : '10.5px';
-    }
+    baseValueSize = forceSmall ? 17.5 : 18.5;
   } else {
-    if (valLen <= 4) {
-      dynamicValueFontSize = forceSmall ? '17.0px' : '18.0px';
-    } else if (valLen <= 8) {
-      dynamicValueFontSize = forceSmall ? '15.5px' : '16.5px';
-    } else if (valLen <= 14) {
-      dynamicValueFontSize = forceSmall ? '14.0px' : '15.0px';
-    } else if (valLen <= 20) {
-      dynamicValueFontSize = forceSmall ? '12.5px' : '13.5px';
-    } else {
-      dynamicValueFontSize = forceSmall ? '11.0px' : '12.0px';
-    }
+    baseValueSize = forceSmall ? 16.0 : 17.0;
   }
 
-  // Determine dynamic font size for the subValue (usually Pinyin/Indonesian text) - maximized for readability
-  let dynamicSubValueFontSize = '12.5px';
-  if (subValue) {
-    if (isMasehi) {
-      if (subValLen <= 10) {
-        dynamicSubValueFontSize = forceSmall ? '14.5px' : '15.5px';
-      } else if (subValLen <= 14) {
-        dynamicSubValueFontSize = forceSmall ? '13.2px' : '14.2px';
-      } else if (subValLen <= 18) {
-        dynamicSubValueFontSize = forceSmall ? '12.0px' : '13.0px';
-      } else if (subValLen <= 22) {
-        dynamicSubValueFontSize = forceSmall ? '10.8px' : '11.8px';
-      } else {
-        dynamicSubValueFontSize = forceSmall ? '9.5px' : '10.5px';
-      }
-    } else if (hasChineseSubValue) {
-      if (subValLen <= 4) {
-        dynamicSubValueFontSize = forceSmall ? '15.5px' : '16.5px';
-      } else if (subValLen <= 7) {
-        dynamicSubValueFontSize = forceSmall ? '14.0px' : '15.0px';
-      } else if (subValLen <= 10) {
-        dynamicSubValueFontSize = forceSmall ? '12.5px' : '13.5px';
-      } else if (subValLen <= 14) {
-        dynamicSubValueFontSize = forceSmall ? '11.2px' : '12.2px';
-      } else if (subValLen <= 18) {
-        dynamicSubValueFontSize = forceSmall ? '10.0px' : '11.0px';
-      } else {
-        dynamicSubValueFontSize = forceSmall ? '8.8px' : '9.8px';
-      }
-    } else if (isSingleLineOnly || isLarge) {
-      if (subValLen <= 4) {
-        dynamicSubValueFontSize = forceSmall ? '16.5px' : '17.5px';
-      } else if (subValLen <= 8) {
-        dynamicSubValueFontSize = forceSmall ? '15.0px' : '16.0px';
-      } else if (subValLen <= 14) {
-        dynamicSubValueFontSize = forceSmall ? '13.5px' : '14.5px';
-      } else if (subValLen <= 20) {
-        dynamicSubValueFontSize = forceSmall ? '12.2px' : '13.2px';
-      } else if (subValLen <= 28) {
-        dynamicSubValueFontSize = forceSmall ? '10.8px' : '11.8px';
-      } else {
-        dynamicSubValueFontSize = forceSmall ? '9.5px' : '10.5px';
-      }
-    } else {
-      if (subValLen <= 6) {
-        dynamicSubValueFontSize = forceSmall ? '13.5px' : '14.5px';
-      } else if (subValLen <= 12) {
-        dynamicSubValueFontSize = forceSmall ? '12.5px' : '13.5px';
-      } else if (subValLen <= 18) {
-        dynamicSubValueFontSize = forceSmall ? '11.2px' : '12.2px';
-      } else {
-        dynamicSubValueFontSize = forceSmall ? '10.0px' : '11.0px';
-      }
-    }
+  // Max safe width (px) inside Value box before text needs scaling down
+  const maxSpaceWidth = forceSmall ? 116 : 124;
+
+  const valueFitting = getFittedFontSize(value, baseValueSize, maxSpaceWidth, 4.8);
+  const dynamicValueFontSize = valueFitting.fontSize;
+  const dynamicValueLetterSpacing = valueFitting.letterSpacing;
+
+  // Dynamic font sizing for subValue
+  let baseSubValueSize = forceSmall ? 12.0 : 13.0;
+  if (hasChineseSubValue) {
+    baseSubValueSize = forceSmall ? 13.5 : 14.5;
   }
+
+  const subValueFitting = getFittedFontSize(subValue || '', baseSubValueSize, maxSpaceWidth, 4.5);
+  const dynamicSubValueFontSize = subValueFitting.fontSize;
+  const dynamicSubValueLetterSpacing = subValueFitting.letterSpacing;
 
   return (
     <div className={cn(
@@ -786,14 +737,13 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
         <p 
           className={cn(
             "text-black leading-tight uppercase animate-fade-in font-normal whitespace-nowrap overflow-hidden",
-            !isMasehi && "text-ellipsis",
             hasChineseValue ? "font-dfkai" : "font-sans",
             isCentered && "text-center"
           )}
           style={{ 
             fontSize: dynamicValueFontSize, 
             fontWeight: 400,
-            letterSpacing: isMasehi && valLen > 10 ? '-0.02em' : 'normal'
+            letterSpacing: dynamicValueLetterSpacing !== 'normal' ? dynamicValueLetterSpacing : (isMasehi && valLen > 10 ? '-0.02em' : 'normal')
           }}
         >
           {value || '-'}
@@ -801,14 +751,15 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
         {subValue && (
           <p 
             className={cn(
-              "text-black leading-tight uppercase animate-fade-in font-normal whitespace-nowrap overflow-hidden text-ellipsis",
+              "text-black leading-tight uppercase animate-fade-in font-normal whitespace-nowrap overflow-hidden",
               hasChineseSubValue ? "font-dfkai" : "font-sans",
               isCentered && "text-center",
               forceSmall ? "mt-0" : "mt-0.5"
             )}
             style={{ 
               fontSize: dynamicSubValueFontSize, 
-              fontWeight: 400 
+              fontWeight: 400,
+              letterSpacing: dynamicSubValueLetterSpacing
             }}
           >
             {subValue}

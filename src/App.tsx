@@ -251,13 +251,17 @@ export default function App() {
   const [masterViharas, setMasterViharas] = useState<{name: string, pinyin: string}[]>([]);
   const [masterPanditas, setMasterPanditas] = useState<{name: string, pinyin: string}[]>([]);
 
+  // Logout Feedback & Confirmation Modal states
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [logoutFeedback, setLogoutFeedback] = useState<string | null>(null);
+
   // User Level Access Guard
   useEffect(() => {
     if (currentUser) {
       if (currentUser.level === 'user') {
-        // User level is strictly limited to 'input' and 'list'
-        if (activeTab !== 'input' && activeTab !== 'list') {
-          setActiveTab('list');
+        // User level can access 'landing' (Beranda), 'input', and 'list'
+        if (activeTab !== 'landing' && activeTab !== 'input' && activeTab !== 'list') {
+          setActiveTab('landing');
         }
       }
     }
@@ -308,16 +312,19 @@ export default function App() {
   const handleLogin = (user: AppUser) => {
     setCurrentUser(user);
     localStorage.setItem('edm_auth_user', JSON.stringify(user));
-    if (user.level === 'user') {
-      setActiveTab('list');
-    } else {
-      setActiveTab('landing');
-    }
+    setLogoutFeedback(null);
+    setActiveTab('landing'); // Always show Beranda page upon login
   };
 
-  const handleLogout = () => {
+  const handleLogoutClick = () => {
+    setIsLogoutModalOpen(true);
+  };
+
+  const confirmLogout = () => {
+    setIsLogoutModalOpen(false);
     setCurrentUser(null);
     localStorage.removeItem('edm_auth_user');
+    setLogoutFeedback('Anda telah berhasil keluar dari akun.');
   };
 
   const handleAddUser = async (newUserData: Omit<AppUser, 'id' | 'createdAt'>) => {
@@ -1185,7 +1192,7 @@ export default function App() {
   });
 
   if (!currentUser) {
-    return <LoginPage onLogin={handleLogin} users={appUsers} />;
+    return <LoginPage onLogin={handleLogin} users={appUsers} logoutFeedback={logoutFeedback} />;
   }
 
   return (
@@ -1199,7 +1206,11 @@ export default function App() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[60] bg-temple-bg overflow-auto"
           >
-            <LandingPage onNavigate={(tab) => setActiveTab(tab as any)} />
+            <LandingPage 
+              onNavigate={(tab) => setActiveTab(tab as any)} 
+              currentUser={currentUser}
+              onLogout={handleLogoutClick}
+            />
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -1296,6 +1307,12 @@ export default function App() {
                 ) : (
                   <>
                     <NavItem 
+                      icon={<Home size={18} />} 
+                      label="Beranda" 
+                      active={activeTab === 'landing'} 
+                      onClick={() => { setActiveTab('landing'); setIsSidebarOpen(false); }} 
+                    />
+                    <NavItem 
                       icon={<Plus size={18} />} 
                       label="Input Data Umat" 
                       active={activeTab === 'input'} 
@@ -1331,7 +1348,7 @@ export default function App() {
                   </div>
                 </div>
                 <button 
-                  onClick={handleLogout}
+                  onClick={handleLogoutClick}
                   className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all shrink-0"
                   title="Keluar / Logout"
                 >
@@ -1361,7 +1378,7 @@ export default function App() {
               <span className="font-serif font-bold text-stone-800 text-sm">Eka Dharma Manggala</span>
             </div>
             <button 
-              onClick={handleLogout} 
+              onClick={handleLogoutClick} 
               className="p-2 text-stone-500 hover:text-red-600 rounded-lg"
               title="Logout"
             >
@@ -2498,6 +2515,71 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {/* Modal Konfirmasi Logout */}
+      <AnimatePresence>
+        {isLogoutModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setIsLogoutModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl border border-stone-200 text-center space-y-5 relative overflow-hidden"
+            >
+              <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl mx-auto flex items-center justify-center border border-red-100 shadow-sm">
+                <LogOut size={30} />
+              </div>
+
+              <div className="space-y-1.5">
+                <h3 className="text-xl font-serif font-bold text-stone-900">Konfirmasi Keluar</h3>
+                <p className="text-xs text-stone-500 leading-relaxed">
+                  Apakah Anda yakin ingin keluar dari sistem Eka Dharma Manggala?
+                </p>
+              </div>
+
+              {currentUser && (
+                <div className="bg-stone-50 p-3 rounded-2xl border border-stone-200/80 flex items-center justify-between text-left">
+                  <div className="min-w-0 pr-2">
+                    <p className="text-xs font-bold text-stone-800 truncate">{currentUser.name || currentUser.username}</p>
+                    <p className="text-[10px] text-stone-400 font-medium">Username: @{currentUser.username}</p>
+                  </div>
+                  <span className={cn(
+                    "text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0",
+                    currentUser.level === 'admin' ? "bg-amber-100 text-amber-900 border border-amber-200" : "bg-blue-100 text-blue-900 border border-blue-200"
+                  )}>
+                    {currentUser.level}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsLogoutModalOpen(false)}
+                  className="flex-1 py-3 px-4 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold rounded-2xl text-xs transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmLogout}
+                  className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl text-xs shadow-lg shadow-red-600/20 transition-all flex items-center justify-center gap-1.5"
+                >
+                  <LogOut size={14} />
+                  Ya, Logout
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -2846,7 +2928,15 @@ function PrintingView({
 }
 
 // --- Landing Page Component ---
-function LandingPage({ onNavigate }: { onNavigate: (tab: 'list' | 'input' | 'design') => void }) {
+function LandingPage({ 
+  onNavigate, 
+  currentUser, 
+  onLogout 
+}: { 
+  onNavigate: (tab: 'list' | 'input' | 'design' | 'master' | 'relations' | 'users' | 'edit-all') => void;
+  currentUser?: AppUser | null;
+  onLogout?: () => void;
+}) {
   return (
     <div className="h-screen w-full relative flex items-center justify-center overflow-auto py-20 no-scrollbar">
       {/* Background with multiple layers */}
@@ -2860,6 +2950,39 @@ function LandingPage({ onNavigate }: { onNavigate: (tab: 'list' | 'input' | 'des
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-stone-50/80 via-transparent to-stone-50/90" />
+      </div>
+
+      {/* Top Header Bar */}
+      <div className="absolute top-0 inset-x-0 z-20 px-6 py-4 flex items-center justify-between max-w-7xl mx-auto w-full">
+        <div className="flex items-center gap-2.5 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full border border-stone-200/80 shadow-sm">
+          <img src="/images/front_logo.png" alt="Logo" className="w-6 h-6 object-contain" />
+          <span className="font-serif font-bold text-stone-800 text-xs sm:text-sm">Eka Dharma Manggala</span>
+        </div>
+
+        {currentUser && (
+          <div className="flex items-center gap-2">
+            <div className="bg-white/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-stone-200/80 shadow-sm flex items-center gap-2">
+              <div className={cn(
+                "w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px]",
+                currentUser.level === 'admin' ? "bg-amber-100 text-amber-900 border border-amber-200" : "bg-blue-100 text-blue-900 border border-blue-200"
+              )}>
+                {currentUser.level === 'admin' ? <Shield size={12} /> : <UserCheck size={12} />}
+              </div>
+              <span className="text-xs font-bold text-stone-800 hidden sm:inline">{currentUser.name || currentUser.username}</span>
+              <span className="text-[10px] bg-stone-100 text-stone-500 font-semibold px-2 py-0.5 rounded-full capitalize">{currentUser.level}</span>
+            </div>
+
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="p-2.5 bg-white/90 hover:bg-red-50 text-stone-500 hover:text-red-600 rounded-full border border-stone-200/80 shadow-sm transition-all flex items-center justify-center shrink-0"
+                title="Keluar / Logout"
+              >
+                <LogOut size={16} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Content Container */}
@@ -2901,7 +3024,10 @@ function LandingPage({ onNavigate }: { onNavigate: (tab: 'list' | 'input' | 'des
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.6, duration: 0.5 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 max-w-6xl mx-auto w-full"
+            className={cn(
+              "grid gap-6 mt-16 max-w-6xl mx-auto w-full",
+              currentUser?.level === 'admin' ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1 md:grid-cols-2 max-w-2xl"
+            )}
           >
             <button
               onClick={() => onNavigate('input')}
@@ -2933,20 +3059,22 @@ function LandingPage({ onNavigate }: { onNavigate: (tab: 'list' | 'input' | 'des
               </div>
             </button>
 
-            <button
-              onClick={() => onNavigate('design')}
-              className="group relative bg-white p-8 rounded-[32px] shadow-xl hover:shadow-2xl transition-all duration-500 border border-stone-100 flex flex-col items-center text-center overflow-hidden hover:-translate-y-2"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-rose-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 mb-6 group-hover:scale-110 transition-transform relative z-10">
-                <Palette size={32} />
-              </div>
-              <h3 className="text-xl font-bold text-stone-800 mb-2 relative z-10">Desain Kartu</h3>
-              <p className="text-sm text-stone-500 relative z-10">Sesuaikan tata letak dan gambar kartu</p>
-              <div className="mt-6 flex items-center gap-2 text-rose-600 font-bold text-xs uppercase tracking-widest relative z-10">
-                Sesuaikan <ChevronRight size={14} />
-              </div>
-            </button>
+            {currentUser?.level === 'admin' && (
+              <button
+                onClick={() => onNavigate('design')}
+                className="group relative bg-white p-8 rounded-[32px] shadow-xl hover:shadow-2xl transition-all duration-500 border border-stone-100 flex flex-col items-center text-center overflow-hidden hover:-translate-y-2"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-rose-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 mb-6 group-hover:scale-110 transition-transform relative z-10">
+                  <Palette size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-stone-800 mb-2 relative z-10">Desain Kartu</h3>
+                <p className="text-sm text-stone-500 relative z-10">Sesuaikan tata letak dan gambar kartu</p>
+                <div className="mt-6 flex items-center gap-2 text-rose-600 font-bold text-xs uppercase tracking-widest relative z-10">
+                  Sesuaikan <ChevronRight size={14} />
+                </div>
+              </button>
+            )}
           </motion.div>
         </motion.div>
       </div>

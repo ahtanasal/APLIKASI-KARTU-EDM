@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Lock, User, Eye, EyeOff, ShieldCheck, KeyRound, AlertCircle, HelpCircle, MessageSquare, X, Copy, Check } from 'lucide-react';
+import { Lock, User, Eye, EyeOff, ShieldCheck, KeyRound, AlertCircle, HelpCircle, MessageSquare, X, Copy, Check, CheckCircle2 } from 'lucide-react';
 import { AppUser } from '../types';
 
 interface LoginPageProps {
   onLogin: (user: AppUser) => void;
   users: AppUser[];
+  logoutFeedback?: string | null;
 }
 
-export function LoginPage({ onLogin, users }: LoginPageProps) {
+export function LoginPage({ onLogin, users, logoutFeedback }: LoginPageProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -108,6 +109,18 @@ export function LoginPage({ onLogin, users }: LoginPageProps) {
             </p>
           </div>
         </div>
+
+        {/* Logout Feedback Banner */}
+        {logoutFeedback && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 bg-emerald-950/60 border border-emerald-800/80 text-emerald-200 rounded-2xl text-xs font-medium flex items-center gap-3 shadow-lg"
+          >
+            <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
+            <span>{logoutFeedback}</span>
+          </motion.div>
+        )}
 
         {/* Error Alert */}
         {errorMsg && (
