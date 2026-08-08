@@ -629,35 +629,35 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
     const effectiveLen = chineseCount * 1.85 + asciiCount;
 
     if (effectiveLen <= 8) {
-      dynamicValueFontSize = forceSmall ? '13.5px' : '14.5px';
+      dynamicValueFontSize = forceSmall ? '15.5px' : '16.5px';
     } else if (effectiveLen <= 12) {
-      dynamicValueFontSize = forceSmall ? '11.8px' : '12.8px';
+      dynamicValueFontSize = forceSmall ? '13.8px' : '14.8px';
     } else if (effectiveLen <= 16) {
-      dynamicValueFontSize = forceSmall ? '10.2px' : '11.2px';
+      dynamicValueFontSize = forceSmall ? '12.2px' : '13.2px';
     } else if (effectiveLen <= 20) {
-      dynamicValueFontSize = forceSmall ? '9.0px' : '9.8px';
+      dynamicValueFontSize = forceSmall ? '11.0px' : '11.8px';
     } else if (effectiveLen <= 25) {
-      dynamicValueFontSize = forceSmall ? '7.8px' : '8.5px';
+      dynamicValueFontSize = forceSmall ? '9.8px' : '10.5px';
     } else if (effectiveLen <= 30) {
-      dynamicValueFontSize = forceSmall ? '7.0px' : '7.6px';
+      dynamicValueFontSize = forceSmall ? '9.0px' : '9.6px';
     } else if (effectiveLen <= 36) {
-      dynamicValueFontSize = forceSmall ? '6.3px' : '6.8px';
+      dynamicValueFontSize = forceSmall ? '8.3px' : '8.8px';
     } else {
-      dynamicValueFontSize = forceSmall ? '5.8px' : '6.2px';
+      dynamicValueFontSize = forceSmall ? '7.8px' : '8.2px';
     }
   } else if (hasChineseValue) {
     if (valLen <= 4) {
-      dynamicValueFontSize = forceSmall ? '17.5px' : '18.5px';
+      dynamicValueFontSize = forceSmall ? '19.5px' : '20.5px';
     } else if (valLen <= 7) {
-      dynamicValueFontSize = forceSmall ? '15.5px' : '16.5px';
+      dynamicValueFontSize = forceSmall ? '17.5px' : '18.5px';
     } else if (valLen <= 10) {
-      dynamicValueFontSize = forceSmall ? '13.8px' : '14.8px';
+      dynamicValueFontSize = forceSmall ? '15.8px' : '16.8px';
     } else if (valLen <= 14) {
-      dynamicValueFontSize = forceSmall ? '12.2px' : '13.2px';
+      dynamicValueFontSize = forceSmall ? '14.2px' : '15.2px';
     } else if (valLen <= 18) {
-      dynamicValueFontSize = forceSmall ? '10.8px' : '11.8px';
+      dynamicValueFontSize = forceSmall ? '12.8px' : '13.8px';
     } else {
-      dynamicValueFontSize = forceSmall ? '9.2px' : '10.2px';
+      dynamicValueFontSize = forceSmall ? '11.2px' : '12.2px';
     }
   } else if (isSingleLineOnly || isLarge) {
     if (valLen <= 3) {
