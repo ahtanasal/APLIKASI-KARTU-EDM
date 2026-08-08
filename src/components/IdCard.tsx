@@ -65,7 +65,9 @@ const formatGregorianDate = (dateStr: string): string => {
   try {
     const cleanStr = dateStr.trim().replace(/\//g, '-');
     const parts = cleanStr.split('-');
-    if (parts.length !== 3) return dateStr;
+    if (parts.length !== 3) {
+      return dateStr.replace(/(?<!\d)(\d)(?!\d)/g, '0$1');
+    }
     
     let day = NaN;
     let month = NaN;
@@ -82,10 +84,11 @@ const formatGregorianDate = (dateStr: string): string => {
     }
     
     if (isNaN(day) || isNaN(month) || isNaN(year) || month < 1 || month > 12) {
-      return dateStr;
+      return dateStr.replace(/(?<!\d)(\d)(?!\d)/g, '0$1');
     }
     
-    return `${day} ${indonesianMonths[month - 1]} ${year}`;
+    const formattedDay = String(day).padStart(2, '0');
+    return `${formattedDay} ${indonesianMonths[month - 1]} ${year}`;
   } catch (e) {
     console.error("Error formatting Gregorian date:", e);
     return dateStr;
@@ -619,18 +622,18 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
   // Determine dynamic font size for the value - optimized to maximize font size in available card space without wrapping
   let dynamicValueFontSize = '14.5px';
   if (isMasehi) {
-    if (valLen <= 5) {
-      dynamicValueFontSize = forceSmall ? '15.0px' : '16.0px';
-    } else if (valLen <= 8) {
+    if (valLen <= 6) {
+      dynamicValueFontSize = forceSmall ? '16.5px' : '17.5px';
+    } else if (valLen <= 10) {
+      dynamicValueFontSize = forceSmall ? '14.5px' : '15.5px';
+    } else if (valLen <= 14) {
       dynamicValueFontSize = forceSmall ? '13.0px' : '14.0px';
-    } else if (valLen <= 11) {
-      dynamicValueFontSize = forceSmall ? '11.0px' : '12.0px';
-    } else if (valLen <= 15) {
-      dynamicValueFontSize = forceSmall ? '9.5px' : '10.5px';
-    } else if (valLen <= 20) {
-      dynamicValueFontSize = forceSmall ? '8.2px' : '9.2px';
+    } else if (valLen <= 18) {
+      dynamicValueFontSize = forceSmall ? '11.5px' : '12.5px';
+    } else if (valLen <= 22) {
+      dynamicValueFontSize = forceSmall ? '10.2px' : '11.2px';
     } else {
-      dynamicValueFontSize = forceSmall ? '7.2px' : '8.2px';
+      dynamicValueFontSize = forceSmall ? '9.0px' : '10.0px';
     }
   } else if (hasChineseValue) {
     if (valLen <= 4) {
@@ -682,14 +685,16 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
   let dynamicSubValueFontSize = '12.5px';
   if (subValue) {
     if (isMasehi) {
-      if (subValLen <= 8) {
-        dynamicSubValueFontSize = forceSmall ? '12.5px' : '13.5px';
-      } else if (subValLen <= 12) {
-        dynamicSubValueFontSize = forceSmall ? '11.0px' : '12.0px';
-      } else if (subValLen <= 16) {
-        dynamicSubValueFontSize = forceSmall ? '9.8px' : '10.8px';
+      if (subValLen <= 10) {
+        dynamicSubValueFontSize = forceSmall ? '14.5px' : '15.5px';
+      } else if (subValLen <= 14) {
+        dynamicSubValueFontSize = forceSmall ? '13.2px' : '14.2px';
+      } else if (subValLen <= 18) {
+        dynamicSubValueFontSize = forceSmall ? '12.0px' : '13.0px';
+      } else if (subValLen <= 22) {
+        dynamicSubValueFontSize = forceSmall ? '10.8px' : '11.8px';
       } else {
-        dynamicSubValueFontSize = forceSmall ? '8.5px' : '9.5px';
+        dynamicSubValueFontSize = forceSmall ? '9.5px' : '10.5px';
       }
     } else if (hasChineseSubValue) {
       if (subValLen <= 4) {

@@ -22,3 +22,14 @@ export interface Umat {
 }
 
 export type UmatInput = Omit<Umat, 'id' | 'createdAt'>;
+
+export interface AppUser {
+  id: string;
+  username: string;
+  password: string;
+  name: string;
+  level: 'admin' | 'user';
+  createdAt?: string;
+  updatedAt?: string;
+}
+

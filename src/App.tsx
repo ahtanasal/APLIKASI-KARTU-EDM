@@ -33,7 +33,11 @@ import {
   FileSpreadsheet,
   Layers,
   RefreshCw,
-  Edit
+  Edit,
+  LogOut,
+  Shield,
+  UserCheck,
+  UserPlus
 } from 'lucide-react';
 
 const TARGET_FIELDS = [
@@ -58,15 +62,18 @@ import { format } from 'date-fns';
 import { Solar } from 'lunar-javascript';
 import { pinyin } from 'pinyin-pro';
 import { cn } from './lib/utils';
-import type { UmatInput, Umat } from './types';
+import type { UmatInput, Umat, AppUser } from './types';
 import { IdCard } from './components/IdCard';
 import { DesignerPage } from './components/DesignerPage';
 import { BatchEditor } from './components/BatchEditor';
+import { LoginPage } from './components/LoginPage';
+import { UserManagement } from './components/UserManagement';
 import { db, handleFirestoreError, OperationType } from './lib/firebase';
 import { 
   collection, 
   doc, 
   setDoc, 
+  updateDoc,
   deleteDoc, 
   onSnapshot
 } from 'firebase/firestore';
@@ -140,12 +147,34 @@ const generateId = () => {
   return Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
 };
 
+// Default Admin Account
+const DEFAULT_ADMIN: AppUser = {
+  id: 'admin-default-wschfy',
+  username: 'WSCHFY',
+  password: 'Wschfy26',
+  name: 'Admin Utama (WSCHFY)',
+  level: 'admin',
+  createdAt: new Date().toISOString()
+};
+
 export default function App() {
   useEffect(() => {
     document.title = "Kartu Umat EDM SMD";
   }, []);
 
-  const [activeTab, setActiveTab] = useState<'landing' | 'list' | 'input' | 'master' | 'relations' | 'design' | 'edit-all'>('landing');
+  // Auth & Session States
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(() => {
+    try {
+      const saved = localStorage.getItem('edm_auth_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const [appUsers, setAppUsers] = useState<AppUser[]>([]);
+
+  const [activeTab, setActiveTab] = useState<'landing' | 'list' | 'input' | 'master' | 'relations' | 'design' | 'edit-all' | 'users'>('landing');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [umats, setUmats] = useState<Umat[]>([]);
   const [selectedUmat, setSelectedUmat] = useState<Umat | null>(null);
@@ -174,6 +203,124 @@ export default function App() {
   // Master Data
   const [masterViharas, setMasterViharas] = useState<{name: string, pinyin: string}[]>([]);
   const [masterPanditas, setMasterPanditas] = useState<{name: string, pinyin: string}[]>([]);
+
+  // User Level Access Guard
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.level === 'user') {
+        // User level is strictly limited to 'input' and 'list'
+        if (activeTab !== 'input' && activeTab !== 'list') {
+          setActiveTab('list');
+        }
+      }
+    }
+  }, [currentUser, activeTab]);
+
+  // Real-time Firestore users listener
+  useEffect(() => {
+    try {
+      const usersCol = collection(db, 'users');
+      const unsub = onSnapshot(usersCol, (snapshot) => {
+        const userList: AppUser[] = [];
+        snapshot.forEach((docSnap) => {
+          userList.push({ id: docSnap.id, ...docSnap.data() } as AppUser);
+        });
+
+        // Ensure default admin WSCHFY always exists
+        const hasWschfy = userList.some(u => u.username.toUpperCase() === 'WSCHFY');
+        if (!hasWschfy) {
+          setDoc(doc(db, 'users', DEFAULT_ADMIN.id), DEFAULT_ADMIN).catch(console.error);
+          userList.unshift(DEFAULT_ADMIN);
+        }
+
+        setAppUsers(userList);
+        localStorage.setItem('edm_app_users', JSON.stringify(userList));
+      }, (error) => {
+        console.warn("Firestore users listener warning:", error);
+        const localUsers = localStorage.getItem('edm_app_users');
+        if (localUsers) {
+          try {
+            const parsed = JSON.parse(localUsers);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setAppUsers(parsed);
+              return;
+            }
+          } catch (e) {}
+        }
+        setAppUsers([DEFAULT_ADMIN]);
+      });
+
+      return () => unsub();
+    } catch (err) {
+      console.error("Error setting up users listener:", err);
+      setAppUsers([DEFAULT_ADMIN]);
+    }
+  }, []);
+
+  // Auth & User Management Handlers
+  const handleLogin = (user: AppUser) => {
+    setCurrentUser(user);
+    localStorage.setItem('edm_auth_user', JSON.stringify(user));
+    if (user.level === 'user') {
+      setActiveTab('list');
+    } else {
+      setActiveTab('landing');
+    }
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('edm_auth_user');
+  };
+
+  const handleAddUser = async (newUserData: Omit<AppUser, 'id' | 'createdAt'>) => {
+    const newId = generateId();
+    const newUser: AppUser = {
+      ...newUserData,
+      id: newId,
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      await setDoc(doc(db, 'users', newId), newUser);
+    } catch (e) {
+      console.error("Firestore setDoc user error:", e);
+    }
+
+    const updated = [...appUsers, newUser];
+    setAppUsers(updated);
+    localStorage.setItem('edm_app_users', JSON.stringify(updated));
+  };
+
+  const handleUpdateUser = async (id: string, updatedData: Partial<AppUser>) => {
+    try {
+      await updateDoc(doc(db, 'users', id), updatedData);
+    } catch (e) {
+      console.error("Firestore updateDoc user error:", e);
+    }
+
+    const updated = appUsers.map(u => u.id === id ? { ...u, ...updatedData } : u);
+    setAppUsers(updated);
+    localStorage.setItem('edm_app_users', JSON.stringify(updated));
+
+    if (currentUser && currentUser.id === id) {
+      const newCurrent = { ...currentUser, ...updatedData };
+      setCurrentUser(newCurrent);
+      localStorage.setItem('edm_auth_user', JSON.stringify(newCurrent));
+    }
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'users', id));
+    } catch (e) {
+      console.error("Firestore deleteDoc user error:", e);
+    }
+
+    const updated = appUsers.filter(u => u.id !== id);
+    setAppUsers(updated);
+    localStorage.setItem('edm_app_users', JSON.stringify(updated));
+  };
 
   // Clean real-time Firestore synchronization
   useEffect(() => {
@@ -884,8 +1031,12 @@ export default function App() {
             }
             if (tanggalMasehi.includes('-')) {
               const parts = tanggalMasehi.split('-');
-              if (parts[0].length === 4) {
-                tanggalMasehi = `${parts[2]}-${parts[1]}-${parts[0]}`;
+              if (parts.length === 3) {
+                if (parts[0].length === 4) {
+                  tanggalMasehi = `${parts[2].padStart(2, '0')}-${parts[1].padStart(2, '0')}-${parts[0]}`;
+                } else if (parts[2].length === 4) {
+                  tanggalMasehi = `${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}-${parts[2]}`;
+                }
               }
             } else if (tanggalMasehi.includes('/')) {
               const parts = tanggalMasehi.split('/');
@@ -1002,6 +1153,10 @@ export default function App() {
     return matchesSearch && matchesJabatan;
   });
 
+  if (!currentUser) {
+    return <LoginPage onLogin={handleLogin} users={appUsers} />;
+  }
+
   return (
     <div className="min-h-screen flex bg-temple-bg">
       <AnimatePresence mode="wait">
@@ -1013,7 +1168,7 @@ export default function App() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[60] bg-temple-bg overflow-auto"
           >
-            <LandingPage onNavigate={(tab) => setActiveTab(tab)} />
+            <LandingPage onNavigate={(tab) => setActiveTab(tab as any)} />
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -1033,75 +1188,129 @@ export default function App() {
       {activeTab !== 'landing' && (
         <motion.aside
           className={cn(
-            "fixed inset-y-0 left-0 w-72 bg-white border-r border-stone-200 z-50 transform lg:translate-x-0 transition-transform duration-300 ease-in-out",
+            "fixed inset-y-0 left-0 w-72 bg-white border-r border-stone-200 z-50 transform lg:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col justify-between",
             !isSidebarOpen && "-translate-x-full"
           )}
         >
-          <div className="h-full flex flex-col">
-            <div className="p-8">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden border border-stone-100">
-                  <img src="/images/front_logo.png" alt="Cong De Logo" className="w-8 h-8 object-contain" />
-                </div>
-                <div>
-                  <h1 className="font-serif text-base font-bold leading-none">Eka Dharma Manggala</h1>
-                  <p className="text-[10px] uppercase tracking-widest text-stone-400 font-semibold mt-1">Samarinda</p>
+          <div className="h-full flex flex-col justify-between">
+            <div>
+              <div className="p-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden border border-stone-100">
+                    <img src="/images/front_logo.png" alt="Cong De Logo" className="w-8 h-8 object-contain" />
+                  </div>
+                  <div>
+                    <h1 className="font-serif text-base font-bold leading-none">Eka Dharma Manggala</h1>
+                    <p className="text-[10px] uppercase tracking-widest text-stone-400 font-semibold mt-1">Samarinda</p>
+                  </div>
                 </div>
               </div>
+
+              <nav className="px-4 py-4 space-y-2 overflow-y-auto max-h-[calc(100vh-220px)] no-scrollbar">
+                {currentUser.level === 'admin' ? (
+                  <>
+                    <NavItem 
+                      icon={<Home size={18} />} 
+                      label="Beranda" 
+                      active={activeTab === 'landing'} 
+                      onClick={() => { setActiveTab('landing'); setIsSidebarOpen(false); }} 
+                    />
+                    <NavItem 
+                      icon={<Plus size={18} />} 
+                      label="Input Data Umat" 
+                      active={activeTab === 'input'} 
+                      onClick={() => { 
+                        setActiveTab('input'); 
+                        setEditingUmat(null);
+                        setIsSidebarOpen(false); 
+                      }} 
+                    />
+                    <NavItem 
+                      icon={<Users size={18} />} 
+                      label="Data Umat" 
+                      active={activeTab === 'list'} 
+                      onClick={() => { setActiveTab('list'); setIsSidebarOpen(false); }} 
+                    />
+                    <NavItem 
+                      icon={<Edit size={18} />} 
+                      label="Edit Data Umat" 
+                      active={activeTab === 'edit-all'} 
+                      onClick={() => { setActiveTab('edit-all'); setIsSidebarOpen(false); }} 
+                    />
+                    <NavItem 
+                      icon={<ShieldCheck size={18} />} 
+                      label="Relasi Pengurus" 
+                      active={activeTab === 'relations'} 
+                      onClick={() => { setActiveTab('relations'); setIsSidebarOpen(false); }} 
+                    />
+                    <NavItem 
+                      icon={<Palette size={18} />} 
+                      label="Desain ID Card" 
+                      active={activeTab === 'design'} 
+                      onClick={() => { setActiveTab('design'); setIsSidebarOpen(false); }} 
+                    />
+                    <NavItem 
+                      icon={<Settings size={18} />} 
+                      label="Master Data" 
+                      active={activeTab === 'master'} 
+                      onClick={() => { setActiveTab('master'); setIsSidebarOpen(false); }} 
+                    />
+                    <NavItem 
+                      icon={<UserPlus size={18} className="text-amber-600" />} 
+                      label="Kelola User" 
+                      active={activeTab === 'users'} 
+                      onClick={() => { setActiveTab('users'); setIsSidebarOpen(false); }} 
+                    />
+                  </>
+                ) : (
+                  <>
+                    <NavItem 
+                      icon={<Plus size={18} />} 
+                      label="Input Data Umat" 
+                      active={activeTab === 'input'} 
+                      onClick={() => { 
+                        setActiveTab('input'); 
+                        setEditingUmat(null);
+                        setIsSidebarOpen(false); 
+                      }} 
+                    />
+                    <NavItem 
+                      icon={<Users size={18} />} 
+                      label="Data Umat" 
+                      active={activeTab === 'list'} 
+                      onClick={() => { setActiveTab('list'); setIsSidebarOpen(false); }} 
+                    />
+                  </>
+                )}
+              </nav>
             </div>
 
-            <nav className="flex-1 px-4 py-8 space-y-2">
-              <NavItem 
-                icon={<Home size={18} />} 
-                label="Beranda" 
-                active={activeTab === 'landing'} 
-                onClick={() => { setActiveTab('landing'); setIsSidebarOpen(false); }} 
-              />
-              <NavItem 
-                icon={<Plus size={18} />} 
-                label="Input Data Umat" 
-                active={activeTab === 'input'} 
-                onClick={() => { 
-                  setActiveTab('input'); 
-                  setEditingUmat(null);
-                  setIsSidebarOpen(false); 
-                }} 
-              />
-              <NavItem 
-                icon={<Users size={18} />} 
-                label="Data Umat" 
-                active={activeTab === 'list'} 
-                onClick={() => { setActiveTab('list'); setIsSidebarOpen(false); }} 
-              />
-              <NavItem 
-                icon={<Edit size={18} />} 
-                label="Edit Data Umat" 
-                active={activeTab === 'edit-all'} 
-                onClick={() => { setActiveTab('edit-all'); setIsSidebarOpen(false); }} 
-              />
-              <NavItem 
-                icon={<ShieldCheck size={18} />} 
-                label="Relasi Pengurus" 
-                active={activeTab === 'relations'} 
-                onClick={() => { setActiveTab('relations'); setIsSidebarOpen(false); }} 
-              />
-              <NavItem 
-                icon={<Palette size={18} />} 
-                label="Desain ID Card" 
-                active={activeTab === 'design'} 
-                onClick={() => { setActiveTab('design'); setIsSidebarOpen(false); }} 
-              />
-              <NavItem 
-                icon={<Settings size={18} />} 
-                label="Master Data" 
-                active={activeTab === 'master'} 
-                onClick={() => { setActiveTab('master'); setIsSidebarOpen(false); }} 
-              />
-            </nav>
-
-            <div className="p-8 border-t border-stone-100 flex flex-col gap-2">
-              <p className="text-[10px] text-stone-400 font-medium">© 2026 EDM Samarinda</p>
-              <p className="text-[8px] text-stone-300 italic">Database Ready</p>
+            <div className="p-4 border-t border-stone-100 flex flex-col gap-3 bg-stone-50/50">
+              <div className="flex items-center justify-between p-3 bg-white rounded-2xl border border-stone-200/80 shadow-sm">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className={cn(
+                    "w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0",
+                    currentUser.level === 'admin' ? "bg-amber-100 text-amber-900 border border-amber-200" : "bg-blue-100 text-blue-900 border border-blue-200"
+                  )}>
+                    {currentUser.level === 'admin' ? <Shield size={14} /> : <UserCheck size={14} />}
+                  </div>
+                  <div className="truncate">
+                    <p className="text-xs font-bold text-stone-800 truncate">{currentUser.name || currentUser.username}</p>
+                    <p className="text-[10px] text-stone-400 font-semibold capitalize">Level: {currentUser.level}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={handleLogout}
+                  className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all shrink-0"
+                  title="Keluar / Logout"
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
+              <div className="flex items-center justify-between px-2">
+                <p className="text-[10px] text-stone-400 font-medium">© 2026 EDM Samarinda</p>
+                <p className="text-[8px] text-stone-300 italic">Database Ready</p>
+              </div>
             </div>
           </div>
         </motion.aside>
@@ -1112,7 +1321,7 @@ export default function App() {
         activeTab !== 'landing' ? "lg:ml-72" : ""
       )}>
         {activeTab !== 'landing' && (
-          <header className="h-16 flex items-center justify-between px-6 bg-white/50 backdrop-blur-md sticky top-0 z-30 lg:hidden">
+          <header className="h-16 flex items-center justify-between px-6 bg-white/50 backdrop-blur-md sticky top-0 z-30 lg:hidden border-b border-stone-200/60">
             <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-stone-600">
               <Menu size={24} />
             </button>
@@ -1120,7 +1329,13 @@ export default function App() {
               <img src="/images/front_logo.png" alt="Logo" className="w-6 h-6 object-contain" />
               <span className="font-serif font-bold text-stone-800 text-sm">Eka Dharma Manggala</span>
             </div>
-            <div className="w-10" />
+            <button 
+              onClick={handleLogout} 
+              className="p-2 text-stone-500 hover:text-red-600 rounded-lg"
+              title="Logout"
+            >
+              <LogOut size={18} />
+            </button>
           </header>
         )}
 
@@ -1426,7 +1641,7 @@ export default function App() {
                   }}
                 />
               </motion.div>
-            ) : (
+            ) : activeTab === 'master' ? (
               <motion.div
                 key="master-view"
                 initial={{ opacity: 0, y: 20 }}
@@ -1442,6 +1657,21 @@ export default function App() {
                   setPanditas={async (p) => {
                     await setDoc(doc(db, 'metadata', 'panditas'), { list: p });
                   }}
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="users-view"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <UserManagement 
+                  users={appUsers}
+                  onAddUser={handleAddUser}
+                  onUpdateUser={handleUpdateUser}
+                  onDeleteUser={handleDeleteUser}
+                  currentUser={currentUser}
                 />
               </motion.div>
             )}
