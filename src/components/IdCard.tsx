@@ -124,6 +124,8 @@ const getLunarDateFallback = (masehi: string, lunarDate?: string, waktu?: string
       const match = waktu.match(/\((.*?)\)/);
       if (match && match[1]) {
         res += ` ${match[1]}`;
+      } else if (waktu.trim()) {
+        res += ` ${waktu.trim()}`;
       }
     }
     return formatLunarNumbers(res.replace(/时/g, '時'));
@@ -622,18 +624,26 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
   // Determine dynamic font size for the value - optimized to maximize font size in available card space without wrapping
   let dynamicValueFontSize = '14.5px';
   if (isMasehi) {
-    if (valLen <= 6) {
-      dynamicValueFontSize = forceSmall ? '16.5px' : '17.5px';
-    } else if (valLen <= 10) {
-      dynamicValueFontSize = forceSmall ? '14.5px' : '15.5px';
-    } else if (valLen <= 14) {
-      dynamicValueFontSize = forceSmall ? '13.0px' : '14.0px';
-    } else if (valLen <= 18) {
-      dynamicValueFontSize = forceSmall ? '11.5px' : '12.5px';
-    } else if (valLen <= 22) {
+    const chineseCount = (value.match(/[\u4e00-\u9fa5]/g) || []).length;
+    const asciiCount = valLen - chineseCount;
+    const effectiveLen = chineseCount * 1.85 + asciiCount;
+
+    if (effectiveLen <= 8) {
+      dynamicValueFontSize = forceSmall ? '13.5px' : '14.5px';
+    } else if (effectiveLen <= 12) {
+      dynamicValueFontSize = forceSmall ? '11.8px' : '12.8px';
+    } else if (effectiveLen <= 16) {
       dynamicValueFontSize = forceSmall ? '10.2px' : '11.2px';
+    } else if (effectiveLen <= 20) {
+      dynamicValueFontSize = forceSmall ? '9.0px' : '9.8px';
+    } else if (effectiveLen <= 25) {
+      dynamicValueFontSize = forceSmall ? '7.8px' : '8.5px';
+    } else if (effectiveLen <= 30) {
+      dynamicValueFontSize = forceSmall ? '7.0px' : '7.6px';
+    } else if (effectiveLen <= 36) {
+      dynamicValueFontSize = forceSmall ? '6.3px' : '6.8px';
     } else {
-      dynamicValueFontSize = forceSmall ? '9.0px' : '10.0px';
+      dynamicValueFontSize = forceSmall ? '5.8px' : '6.2px';
     }
   } else if (hasChineseValue) {
     if (valLen <= 4) {
@@ -775,13 +785,15 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
       <div className={cn("flex-1 flex flex-col justify-center min-w-0 bg-white/10", forceSmall ? "px-1 py-0" : "px-1.5 py-0.5")}>
         <p 
           className={cn(
-            "text-black leading-tight uppercase animate-fade-in font-normal whitespace-nowrap overflow-hidden text-ellipsis",
+            "text-black leading-tight uppercase animate-fade-in font-normal whitespace-nowrap overflow-hidden",
+            !isMasehi && "text-ellipsis",
             hasChineseValue ? "font-dfkai" : "font-sans",
             isCentered && "text-center"
           )}
           style={{ 
             fontSize: dynamicValueFontSize, 
-            fontWeight: 400 
+            fontWeight: 400,
+            letterSpacing: isMasehi && valLen > 10 ? '-0.02em' : 'normal'
           }}
         >
           {value || '-'}

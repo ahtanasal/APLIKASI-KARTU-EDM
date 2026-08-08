@@ -1748,8 +1748,10 @@ export default function App() {
                               {/* Details Grid */}
                               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2 text-xs border-t border-stone-100 bg-stone-50/60 p-3 rounded-2xl">
                                 <div>
-                                  <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold block">Tgl Mohon Tao</span>
-                                  <span className="font-bold text-stone-800">{u.tanggalMohonTao || '-'}</span>
+                                  <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold block">Tgl Lunar (Imlek)</span>
+                                  <span className="font-bold text-amber-950 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60 text-[11px] leading-tight block break-words">
+                                    {u.tanggalLunar || u.tanggalMasehi || '-'}
+                                  </span>
                                 </div>
                                 <div>
                                   <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold block">Pandita</span>
@@ -1859,7 +1861,14 @@ export default function App() {
                                   </td>
                                   <td className="p-3.5 font-medium text-stone-700">{u.vihara || '-'}</td>
                                   <td className="p-3.5 font-medium text-stone-700">{u.pandita || '-'}</td>
-                                  <td className="p-3.5 text-stone-600">{u.tanggalMohonTao || '-'}</td>
+                                  <td className="p-3.5 text-stone-600">
+                                    <div className="font-bold text-amber-950 text-xs leading-tight whitespace-normal break-words">
+                                      {u.tanggalLunar || u.tanggalMasehi || '-'}
+                                    </div>
+                                    {u.tanggalLunar && u.tanggalMasehi && (
+                                      <div className="text-[10px] text-stone-400 font-medium mt-0.5">{u.tanggalMasehi}</div>
+                                    )}
+                                  </td>
                                   <td className="p-3.5">
                                     <div className="flex items-center justify-center gap-1.5">
                                       <button
