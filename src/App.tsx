@@ -98,6 +98,47 @@ const SHI_CHEN = [
 ];
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
+
+export const matchJabatanFilter = (jabatanSuci: string | undefined | null, filterValue: string): boolean => {
+  if (filterValue === 'all') return true;
+  if (!jabatanSuci) return false;
+
+  const j = jabatanSuci.toLowerCase().trim();
+  const f = filterValue.toLowerCase().trim();
+
+  if (j === f) return true;
+
+  // 1. Fu Than Cu (副壇主 / Fu Than Cu / Fu Tan Cu / Fu Thancu)
+  if (f.includes('fu') || f.includes('副')) {
+    const isFu = j.includes('fu') || j.includes('副');
+    if (!isFu) return false;
+    return j.includes('than') || j.includes('tan') || j.includes('cu') || j.includes('壇') || j.includes('主');
+  }
+
+  // 2. Than Cu (壇主 / Than Cu / Tan Cu) - MUST EXCLUDE Fu Than Cu!
+  if (f.includes('than') || f.includes('tan') || f.includes('壇')) {
+    // If it's a Fu Than Cu, explicitly reject for Than Cu filter
+    if (j.includes('fu') || j.includes('副')) return false;
+    return (j.includes('than') || j.includes('tan') || j.includes('壇')) && (j.includes('cu') || j.includes('主'));
+  }
+
+  // 3. Tien Chuan Se (點傳師)
+  if (f.includes('tien') || f.includes('點傳師')) {
+    return j.includes('tien') || j.includes('點傳師') || j.includes('chuan');
+  }
+
+  // 4. Ciang Se (講師)
+  if (f.includes('ciang') || f.includes('jiang') || f.includes('講師')) {
+    return j.includes('ciang') || j.includes('jiang') || j.includes('講師');
+  }
+
+  // 5. Umat (道親)
+  if (f.includes('umat') || f.includes('道親')) {
+    return j.includes('umat') || j.includes('道親');
+  }
+
+  return false;
+};
 import { toPng } from 'html-to-image';
 
 // Safe Base64 encoding/decoding supporting UTF-8 (e.g. Chinese/Unicode characters)
@@ -1138,23 +1179,7 @@ export default function App() {
       u.noId.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.namaIndonesia?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesJabatan = jabatanFilter === 'all' || 
-      u.jabatanSuci === jabatanFilter ||
-      (() => {
-        if (!u.jabatanSuci) return false;
-        const filterLower = jabatanFilter.toLowerCase();
-        const umatLower = u.jabatanSuci.toLowerCase();
-        
-        // Check exact match
-        if (umatLower === filterLower) return true;
-        
-        // If filter is "道親 - Umat", match "Umat" or "道親"
-        if (filterLower.includes('umat') && (umatLower.includes('umat') || umatLower.includes('道親'))) return true;
-        
-        // Split parts
-        const parts = filterLower.split('-').map(p => p.trim());
-        return parts.some(p => p && umatLower.includes(p));
-      })();
+    const matchesJabatan = matchJabatanFilter(u.jabatanSuci, jabatanFilter);
     
     return matchesSearch && matchesJabatan;
   });
@@ -1586,15 +1611,7 @@ export default function App() {
                     ].map((opt) => {
                       const count = opt.value === 'all' 
                         ? umats.length 
-                        : umats.filter(u => {
-                            if (!u.jabatanSuci) return false;
-                            const f = opt.value.toLowerCase();
-                            const j = u.jabatanSuci.toLowerCase();
-                            if (j === f) return true;
-                            if (f.includes('umat') && (j.includes('umat') || j.includes('道親'))) return true;
-                            const parts = f.split('-').map(p => p.trim());
-                            return parts.some(p => p && j.includes(p));
-                          }).length;
+                        : umats.filter(u => matchJabatanFilter(u.jabatanSuci, opt.value)).length;
 
                       const isActive = jabatanFilter === opt.value;
                       return (
@@ -1744,32 +1761,6 @@ export default function App() {
                                   ID: {u.noId}
                                 </span>
                               </div>
-
-                              {/* Details Grid */}
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2 text-xs border-t border-stone-100 bg-stone-50/60 p-3 rounded-2xl">
-                                <div>
-                                  <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold block">Tgl Lunar (Imlek)</span>
-                                  <span className="font-bold text-amber-950 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60 text-[13px] leading-tight block break-words">
-                                    {u.tanggalLunar || u.tanggalMasehi || '-'}
-                                  </span>
-                                </div>
-                                <div>
-                                  <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold block">Pandita</span>
-                                  <span className="font-bold text-stone-800">{u.pandita || '-'}</span>
-                                </div>
-                                <div>
-                                  <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold block">Waktu</span>
-                                  <span className="font-semibold text-stone-700">{u.waktu || '-'}</span>
-                                </div>
-                                <div>
-                                  <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold block">Pengajak</span>
-                                  <span className="font-semibold text-stone-700">{u.pengajak || '-'}</span>
-                                </div>
-                                <div>
-                                  <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold block">Penjamin</span>
-                                  <span className="font-semibold text-stone-700">{u.penjamin || '-'}</span>
-                                </div>
-                              </div>
                             </div>
 
                             {/* Card Footer Actions */}
@@ -1819,8 +1810,6 @@ export default function App() {
                               <th className="p-3.5">No. ID</th>
                               <th className="p-3.5">Jabatan</th>
                               <th className="p-3.5">Vihara</th>
-                              <th className="p-3.5">Pandita</th>
-                              <th className="p-3.5">Tgl Mohon Tao</th>
                               <th className="p-3.5 text-center">Aksi</th>
                             </tr>
                           </thead>
@@ -1860,15 +1849,6 @@ export default function App() {
                                     </span>
                                   </td>
                                   <td className="p-3.5 font-medium text-stone-700">{u.vihara || '-'}</td>
-                                  <td className="p-3.5 font-medium text-stone-700">{u.pandita || '-'}</td>
-                                  <td className="p-3.5 text-stone-600">
-                                    <div className="font-bold text-amber-950 text-[14px] leading-tight whitespace-normal break-words">
-                                      {u.tanggalLunar || u.tanggalMasehi || '-'}
-                                    </div>
-                                    {u.tanggalLunar && u.tanggalMasehi && (
-                                      <div className="text-[10px] text-stone-400 font-medium mt-0.5">{u.tanggalMasehi}</div>
-                                    )}
-                                  </td>
                                   <td className="p-3.5">
                                     <div className="flex items-center justify-center gap-1.5">
                                       <button
