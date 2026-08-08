@@ -22,6 +22,7 @@ import {
   Download,
   Trash2,
   Printer,
+  Check,
   CheckCircle2,
   MessageSquare,
   Pencil,
@@ -37,7 +38,10 @@ import {
   LogOut,
   Shield,
   UserCheck,
-  UserPlus
+  UserPlus,
+  LayoutGrid,
+  List,
+  Filter
 } from 'lucide-react';
 
 const TARGET_FIELDS = [
@@ -190,6 +194,8 @@ export default function App() {
   const [editingUmat, setEditingUmat] = useState<Umat | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [jabatanFilter, setJabatanFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [isImportExportOpen, setIsImportExportOpen] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const printContainerRef = React.useRef<HTMLDivElement>(null);
 
@@ -1378,231 +1384,540 @@ export default function App() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="space-y-8"
+                className="space-y-6"
               >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <h2 className="font-serif text-4xl font-bold text-stone-800">Data Umat</h2>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <input 
-                      type="file" 
-                      ref={fileInputRef} 
-                      onChange={handleImportExcel} 
-                      accept=".xlsx, .xls" 
-                      className="hidden" 
-                    />
-                    <input 
-                      type="file" 
-                      ref={taoFileInputRef} 
-                      onChange={handleImportTaoExcel} 
-                      accept=".xlsx, .xls" 
-                      className="hidden" 
-                    />
-                    <button 
-                      onClick={handleDownloadTemplate}
-                      className="flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-600 rounded-xl text-xs font-bold hover:bg-stone-200 transition-all shadow-sm"
-                    >
-                      <FileDown size={14} className="text-rose-600" />
-                      Template
-                    </button>
-                    <button 
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center gap-2 px-4 py-2 bg-white border border-stone-200 text-stone-600 rounded-xl text-xs font-bold hover:bg-stone-50 transition-all shadow-sm"
-                    >
-                      <FileUp size={14} />
-                      Import Standard
-                    </button>
-                    <button 
-                      onClick={() => taoFileInputRef.current?.click()}
-                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl text-xs font-bold hover:from-amber-600 hover:to-amber-700 transition-all shadow-md shadow-amber-500/10"
-                    >
-                      <FileSpreadsheet size={14} />
-                      Import TAO UK
-                    </button>
-                    <button 
-                      onClick={handleExportExcel}
-                      className="flex items-center gap-2 px-4 py-2 bg-white border border-stone-200 text-stone-600 rounded-xl text-xs font-bold hover:bg-stone-50 transition-all shadow-sm"
-                    >
-                      <FileDown size={14} />
-                      Export
-                    </button>
-                    {selectedIds.size > 0 && (
-                      <div className="flex flex-wrap items-center gap-2 animate-in fade-in zoom-in duration-300">
-                        <button 
-                          onClick={() => setSelectedIds(new Set())}
-                          className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition-all border border-red-100"
-                        >
-                          <X size={14} />
-                          Batal Pilih
-                        </button>
-                        <button 
-                          onClick={handlePrintSelected}
-                          className="flex items-center gap-3 px-6 py-2 bg-temple-wood text-white rounded-xl text-xs font-bold hover:shadow-xl hover:bg-temple-wood/90 transition-all shadow-lg shadow-temple-wood/20"
-                        >
-                          <Printer size={14} />
-                          Cetak {selectedIds.size} Kartu
-                        </button>
-                        <button 
-                          onClick={handleDeleteSelected}
-                          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition-all border border-red-600 shadow-md shadow-red-600/10"
-                        >
-                          <Trash2 size={14} />
-                          Hapus {selectedIds.size} Umat
-                        </button>
+                {/* 1. Header Row */}
+                <div className="bg-white p-6 rounded-3xl border border-stone-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-800 flex items-center justify-center font-bold">
+                      <Users size={24} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="font-serif text-2xl md:text-3xl font-bold text-stone-800">Data Umat</h2>
+                        <span className="px-2.5 py-0.5 bg-amber-100 text-amber-900 font-bold text-xs rounded-full border border-amber-200">
+                          {filteredUmats.length} Umat
+                        </span>
                       </div>
-                    )}
-                    <button 
+                      <p className="text-xs text-stone-500 mt-0.5">Kelola data pemohon Tao, ID Card, dan cetak kartu</p>
+                    </div>
+                  </div>
+
+                  {/* Actions Right */}
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    {/* Input Data Button */}
+                    <button
                       onClick={() => {
-                        if (selectedIds.size === filteredUmats.length && filteredUmats.length > 0) {
-                          setSelectedIds(new Set());
-                        } else {
-                          setSelectedIds(new Set(filteredUmats.map(u => u.id)));
-                        }
+                        setEditingUmat(null);
+                        setActiveTab('input');
                       }}
-                      className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm",
-                        selectedIds.size === filteredUmats.length && filteredUmats.length > 0
-                          ? "bg-stone-800 border-stone-800 text-white shadow-md"
-                          : "bg-white text-stone-600 border-stone-200 hover:bg-stone-50"
-                      )}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-stone-950 rounded-2xl text-xs font-bold transition-all shadow-md shadow-amber-500/20"
                     >
-                      <CheckCircle2 size={14} />
-                      {selectedIds.size === filteredUmats.length && filteredUmats.length > 0 ? 'Batalkan Semua' : 'Pilih Semua'}
+                      <Plus size={16} />
+                      <span>Input Umat Baru</span>
                     </button>
+
+                    {/* Dropdown Import / Export */}
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
                       <input 
-                        type="text" 
-                        placeholder="Cari nama atau ID..." 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 pr-4 py-2 bg-white border border-stone-200 rounded-full text-sm focus:outline-none focus:border-temple-gold transition-colors w-full md:w-64"
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleImportExcel} 
+                        accept=".xlsx, .xls" 
+                        className="hidden" 
                       />
+                      <input 
+                        type="file" 
+                        ref={taoFileInputRef} 
+                        onChange={handleImportTaoExcel} 
+                        accept=".xlsx, .xls" 
+                        className="hidden" 
+                      />
+
+                      <button
+                        onClick={() => setIsImportExportOpen(!isImportExportOpen)}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-2xl text-xs font-bold transition-all border border-stone-200"
+                      >
+                        <FileSpreadsheet size={16} className="text-stone-600" />
+                        <span>Import / Export</span>
+                        <ChevronDown size={14} className={cn("transition-transform", isImportExportOpen && "rotate-180")} />
+                      </button>
+
+                      {isImportExportOpen && (
+                        <>
+                          <div 
+                            className="fixed inset-0 z-40" 
+                            onClick={() => setIsImportExportOpen(false)} 
+                          />
+                          <div className="absolute right-0 mt-2 w-56 bg-white border border-stone-200 rounded-2xl shadow-xl z-50 p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                            <button
+                              onClick={() => {
+                                handleDownloadTemplate();
+                                setIsImportExportOpen(false);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-100 rounded-xl transition-colors text-left"
+                            >
+                              <FileDown size={14} className="text-amber-600" />
+                              <span>Download Template Excel</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                fileInputRef.current?.click();
+                                setIsImportExportOpen(false);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-100 rounded-xl transition-colors text-left"
+                            >
+                              <FileUp size={14} className="text-blue-600" />
+                              <span>Import Excel Standard</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                taoFileInputRef.current?.click();
+                                setIsImportExportOpen(false);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-stone-700 hover:bg-amber-50 hover:text-amber-900 rounded-xl transition-colors text-left"
+                            >
+                              <FileSpreadsheet size={14} className="text-amber-600" />
+                              <span>Import Form TAO UK</span>
+                            </button>
+                            <div className="border-t border-stone-100 my-1" />
+                            <button
+                              onClick={() => {
+                                handleExportExcel();
+                                setIsImportExportOpen(false);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-stone-700 hover:bg-emerald-50 hover:text-emerald-900 rounded-xl transition-colors text-left"
+                            >
+                              <Download size={14} className="text-emerald-600" />
+                              <span>Export Ke Excel</span>
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 overflow-x-auto pb-2 no-scrollbar">
-                  {[
-                    { label: 'Semua', value: 'all' },
-                    { label: 'Tien Chuan Se', value: '點傳師 - Tien Chuan Se' },
-                    { label: 'Ciang Se', value: '講師 - Ciang Se' },
-                    { label: 'Than Cu', value: '壇主 - Than Cu' },
-                    { label: 'Fu Than Cu', value: '副壇主 - Fu Than Cu' },
-                    { label: 'Umat', value: '道親 - Umat' },
-                  ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setJabatanFilter(opt.value)}
-                      className={cn(
-                        "px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border",
-                        jabatanFilter === opt.value
-                          ? "bg-stone-800 border-stone-800 text-white shadow-md"
-                          : "bg-white border-stone-200 text-stone-500 hover:border-stone-400"
+                {/* 2. Search & Controls Bar */}
+                <div className="bg-white p-4 rounded-3xl border border-stone-200/80 shadow-sm space-y-3">
+                  <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                    {/* Search Field */}
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
+                      <input 
+                        type="text" 
+                        placeholder="Cari berdasarkan nama, Pinyin, nama Indonesia, No. ID, Vihara, Pandita..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-10 py-2.5 bg-stone-50 border border-stone-200 rounded-2xl text-xs sm:text-sm font-medium focus:outline-none focus:border-amber-500 focus:bg-white transition-all"
+                      />
+                      {searchQuery && (
+                        <button 
+                          onClick={() => setSearchQuery('')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-1"
+                        >
+                          <X size={14} />
+                        </button>
                       )}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
+                    </div>
 
-                <div className="space-y-4">
-                  {filteredUmats.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-4">
-                      {filteredUmats.map((u) => (
-                        <motion.div 
-                          key={u.id}
-                          layout
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {/* Select All Toggle Button */}
+                      <button 
+                        onClick={() => {
+                          if (selectedIds.size === filteredUmats.length && filteredUmats.length > 0) {
+                            setSelectedIds(new Set());
+                          } else {
+                            setSelectedIds(new Set(filteredUmats.map(u => u.id)));
+                          }
+                        }}
+                        className={cn(
+                          "flex items-center gap-2 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all border",
+                          selectedIds.size === filteredUmats.length && filteredUmats.length > 0
+                            ? "bg-amber-500 border-amber-500 text-stone-950 shadow-sm"
+                            : "bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100"
+                        )}
+                      >
+                        <CheckCircle2 size={15} />
+                        <span>{selectedIds.size === filteredUmats.length && filteredUmats.length > 0 ? 'Batal Pilih Semua' : 'Pilih Semua'}</span>
+                      </button>
+
+                      {/* View Mode Toggle */}
+                      <div className="flex items-center bg-stone-100 p-1 rounded-2xl border border-stone-200">
+                        <button
+                          onClick={() => setViewMode('cards')}
                           className={cn(
-                            "bg-white p-6 rounded-3xl border border-stone-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-temple-gold/30 transition-colors relative",
-                            selectedIds.has(u.id) && "border-temple-gold ring-1 ring-temple-gold/20"
+                            "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all",
+                            viewMode === 'cards' ? "bg-white text-stone-900 shadow-xs font-bold" : "text-stone-500 hover:text-stone-800"
+                          )}
+                          title="Tampilan Kartu"
+                        >
+                          <LayoutGrid size={15} />
+                          <span className="hidden sm:inline">Kartu</span>
+                        </button>
+                        <button
+                          onClick={() => setViewMode('table')}
+                          className={cn(
+                            "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all",
+                            viewMode === 'table' ? "bg-white text-stone-900 shadow-xs font-bold" : "text-stone-500 hover:text-stone-800"
+                          )}
+                          title="Tampilan Tabel"
+                        >
+                          <List size={15} />
+                          <span className="hidden sm:inline">Tabel</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Jabatan Filter Pills */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pt-2 border-t border-stone-100 no-scrollbar">
+                    <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider mr-1 shrink-0 flex items-center gap-1">
+                      <Filter size={12} />
+                      Jabatan:
+                    </span>
+                    {[
+                      { label: 'Semua', value: 'all' },
+                      { label: 'Tien Chuan Se', value: '點傳師 - Tien Chuan Se' },
+                      { label: 'Ciang Se', value: '講師 - Ciang Se' },
+                      { label: 'Than Cu', value: '壇主 - Than Cu' },
+                      { label: 'Fu Than Cu', value: '副壇主 - Fu Than Cu' },
+                      { label: 'Umat', value: '道親 - Umat' },
+                    ].map((opt) => {
+                      const count = opt.value === 'all' 
+                        ? umats.length 
+                        : umats.filter(u => {
+                            if (!u.jabatanSuci) return false;
+                            const f = opt.value.toLowerCase();
+                            const j = u.jabatanSuci.toLowerCase();
+                            if (j === f) return true;
+                            if (f.includes('umat') && (j.includes('umat') || j.includes('道親'))) return true;
+                            const parts = f.split('-').map(p => p.trim());
+                            return parts.some(p => p && j.includes(p));
+                          }).length;
+
+                      const isActive = jabatanFilter === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          onClick={() => setJabatanFilter(opt.value)}
+                          className={cn(
+                            "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border",
+                            isActive
+                              ? "bg-stone-900 border-stone-900 text-amber-400 shadow-sm"
+                              : "bg-stone-50 border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-100"
                           )}
                         >
-                          <div className="flex items-center gap-4">
-                            <button
-                              onClick={() => toggleSelectUmat(u.id)}
-                              className={cn(
-                                "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all",
-                                selectedIds.has(u.id) 
-                                  ? "bg-temple-gold border-temple-gold text-white" 
-                                  : "border-stone-200 text-transparent hover:border-stone-300"
-                              )}
-                            >
-                              <CheckCircle2 size={14} />
-                            </button>
-                            <div className="w-12 h-12 bg-stone-50 rounded-2xl flex items-center justify-center text-stone-400">
-                              <User size={24} />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className="text-lg font-bold text-stone-800 flex items-baseline gap-2 uppercase">
-                                  {u.nama}
-                                  {u.namaPinyin && (
-                                    <span className="text-xs font-semibold text-stone-400 tracking-wide">
-                                      {u.namaPinyin}
-                                    </span>
-                                  )}
-                                </h4>
+                          <span>{opt.label}</span>
+                          <span className={cn(
+                            "px-1.5 py-0.2 rounded-md text-[10px] font-extrabold",
+                            isActive ? "bg-amber-400/20 text-amber-300" : "bg-stone-200 text-stone-600"
+                          )}>
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Floating Batch Selection Bar */}
+                {selectedIds.size > 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    className="sticky bottom-6 z-40 bg-stone-900 border border-stone-800 text-white p-3.5 px-6 rounded-3xl shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 max-w-4xl mx-auto"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-amber-400/20 text-amber-400 flex items-center justify-center font-bold text-xs">
+                        {selectedIds.size}
+                      </div>
+                      <span className="text-sm font-bold text-stone-100">
+                        {selectedIds.size} Umat Dipilih
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button 
+                        onClick={handlePrintSelected}
+                        className="flex items-center gap-2 px-5 py-2 bg-amber-500 hover:bg-amber-400 text-stone-950 rounded-2xl text-xs font-bold transition-all shadow-lg shadow-amber-500/20"
+                      >
+                        <Printer size={15} />
+                        <span>Cetak {selectedIds.size} Kartu</span>
+                      </button>
+                      <button 
+                        onClick={handleDeleteSelected}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-600/90 hover:bg-red-600 text-white rounded-2xl text-xs font-bold transition-all"
+                      >
+                        <Trash2 size={15} />
+                        <span>Hapus</span>
+                      </button>
+                      <button 
+                        onClick={() => setSelectedIds(new Set())}
+                        className="p-2 text-stone-400 hover:text-white rounded-xl hover:bg-stone-800 transition-colors"
+                        title="Batal Pilih"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* 3. Main Data View (Cards or Table) */}
+                {filteredUmats.length > 0 ? (
+                  viewMode === 'cards' ? (
+                    /* CARDS GRID VIEW */
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                      {filteredUmats.map((u) => {
+                        const isSelected = selectedIds.has(u.id);
+                        return (
+                          <motion.div 
+                            key={u.id}
+                            layout
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className={cn(
+                              "bg-white rounded-3xl border p-5 transition-all relative flex flex-col justify-between gap-4 shadow-sm hover:shadow-md",
+                              isSelected 
+                                ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-500/5" 
+                                : "border-stone-200/80 hover:border-amber-300"
+                            )}
+                          >
+                            <div className="space-y-3">
+                              {/* Card Header: Selection & Names */}
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-start gap-3.5 min-w-0">
+                                  <button
+                                    onClick={() => toggleSelectUmat(u.id)}
+                                    className={cn(
+                                      "mt-0.5 w-6 h-6 rounded-xl border-2 flex items-center justify-center transition-all shrink-0",
+                                      isSelected 
+                                        ? "bg-amber-500 border-amber-500 text-stone-950" 
+                                        : "border-stone-300 text-transparent hover:border-amber-400"
+                                    )}
+                                  >
+                                    <CheckCircle2 size={14} />
+                                  </button>
+
+                                  <div className="min-w-0">
+                                    <div className="flex items-baseline gap-2 flex-wrap">
+                                      <h4 className="text-xl font-bold font-serif text-stone-900 tracking-wide">
+                                        {u.nama}
+                                      </h4>
+                                      {u.namaPinyin && (
+                                        <span className="text-xs font-bold text-amber-800/80 uppercase tracking-widest bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/50">
+                                          {u.namaPinyin}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {u.namaIndonesia && (
+                                      <p className="text-xs font-bold text-stone-600 uppercase mt-0.5">
+                                        {u.namaIndonesia}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Status Print Badge */}
                                 {u.lastPrintedAt && (
-                                  <span className="px-2 py-0.5 bg-stone-100 text-[10px] font-bold text-stone-500 rounded-md flex items-center gap-1">
-                                    <Printer size={10} />
-                                    TERCETAK: {format(new Date(u.lastPrintedAt), 'dd/MM/yy')}
+                                  <span className="shrink-0 px-2.5 py-1 bg-stone-100 border border-stone-200 text-[10px] font-bold text-stone-600 rounded-xl flex items-center gap-1">
+                                    <Printer size={11} className="text-stone-500" />
+                                    <span>Tercetak: {format(new Date(u.lastPrintedAt), 'dd/MM/yy')}</span>
                                   </span>
                                 )}
                               </div>
-                              {u.namaIndonesia && (
-                                <p className="text-xs font-bold text-rose-600/80 uppercase mb-0.5">
-                                  {u.namaIndonesia}
-                                </p>
-                              )}
-                              <p className="text-sm text-stone-500 font-medium uppercase">
-                                ID: {u.noId} • {u.jabatanSuci} {u.waktu ? `• ${u.waktu}` : ''}
-                              </p>
-                            </div>
-                          </div>
 
-                          <div className="flex items-center gap-3">
-                            <button 
-                              onClick={() => {
-                                setEditingUmat(u);
-                                setActiveTab('input');
-                              }}
-                              className="p-2 text-stone-300 hover:text-temple-gold hover:bg-temple-gold/5 rounded-xl transition-all"
-                              title="Edit Data"
-                            >
-                              <Pencil size={18} />
-                            </button>
-                            <button 
-                              onClick={() => setSelectedUmat(u)}
-                              className="flex items-center gap-2 px-4 py-2 bg-temple-wood text-white rounded-xl text-xs font-bold hover:scale-105 active:scale-95 transition-all shadow-lg shadow-temple-wood/10"
-                            >
-                              <IdCardIcon size={14} />
-                              ID Card
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteUmat(u.id)}
-                              className="p-2 text-stone-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                              title="Hapus Data"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
-                        </motion.div>
-                      ))}
+                              {/* Badges Row */}
+                              <div className="flex items-center gap-2 flex-wrap pt-1">
+                                <span className="px-3 py-1 bg-amber-100 text-amber-900 text-xs font-extrabold rounded-xl border border-amber-200">
+                                  {u.jabatanSuci || 'Umat'}
+                                </span>
+                                {u.vihara && (
+                                  <span className="px-2.5 py-1 bg-stone-100 text-stone-700 text-xs font-semibold rounded-xl border border-stone-200 flex items-center gap-1">
+                                    <MapPin size={12} className="text-stone-400" />
+                                    <span>{u.vihara}</span>
+                                  </span>
+                                )}
+                                <span className="px-2.5 py-1 bg-stone-100 text-stone-600 text-xs font-mono font-bold rounded-xl border border-stone-200">
+                                  ID: {u.noId}
+                                </span>
+                              </div>
+
+                              {/* Details Grid */}
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2 text-xs border-t border-stone-100 bg-stone-50/60 p-3 rounded-2xl">
+                                <div>
+                                  <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold block">Tgl Mohon Tao</span>
+                                  <span className="font-bold text-stone-800">{u.tanggalMohonTao || '-'}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold block">Pandita</span>
+                                  <span className="font-bold text-stone-800">{u.pandita || '-'}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold block">Waktu</span>
+                                  <span className="font-semibold text-stone-700">{u.waktu || '-'}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold block">Pengajak</span>
+                                  <span className="font-semibold text-stone-700">{u.pengajak || '-'}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold block">Penjamin</span>
+                                  <span className="font-semibold text-stone-700">{u.penjamin || '-'}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Card Footer Actions */}
+                            <div className="flex items-center justify-between border-t border-stone-100 pt-3 mt-1">
+                              <span className="text-[10px] text-stone-400 font-medium">EDM Samarinda</span>
+
+                              <div className="flex items-center gap-2">
+                                <button 
+                                  onClick={() => setSelectedUmat(u)}
+                                  className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-stone-950 rounded-xl text-xs font-bold transition-all shadow-sm"
+                                >
+                                  <IdCardIcon size={14} />
+                                  <span>ID Card</span>
+                                </button>
+                                <button 
+                                  onClick={() => {
+                                    setEditingUmat(u);
+                                    setActiveTab('input');
+                                  }}
+                                  className="p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded-xl transition-colors border border-stone-200"
+                                  title="Edit Data Umat"
+                                >
+                                  <Pencil size={15} />
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteUmat(u.id)}
+                                  className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors border border-stone-200"
+                                  title="Hapus Data"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              </div>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
                     </div>
                   ) : (
-                    <div className="bg-white rounded-3xl border border-stone-200 border-dashed py-12 px-8 text-center space-y-4">
-                      <div className="inline-flex items-center justify-center w-16 h-16 bg-stone-50 rounded-full text-stone-300">
-                        <Users size={32} />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="font-bold text-stone-600">Belum ada data</p>
-                        <p className="text-sm text-stone-400">Belum ada data umat yang tersimpan.</p>
+                    /* TABLE VIEW */
+                    <div className="bg-white rounded-3xl border border-stone-200/80 shadow-sm overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr className="bg-stone-100/80 text-stone-600 border-b border-stone-200 font-bold uppercase tracking-wider text-[10px]">
+                              <th className="p-3.5 pl-4 w-10">#</th>
+                              <th className="p-3.5">Nama Umat</th>
+                              <th className="p-3.5">No. ID</th>
+                              <th className="p-3.5">Jabatan</th>
+                              <th className="p-3.5">Vihara</th>
+                              <th className="p-3.5">Pandita</th>
+                              <th className="p-3.5">Tgl Mohon Tao</th>
+                              <th className="p-3.5 text-center">Aksi</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-stone-100 font-medium text-stone-800">
+                            {filteredUmats.map((u) => {
+                              const isSelected = selectedIds.has(u.id);
+                              return (
+                                <tr 
+                                  key={u.id}
+                                  className={cn(
+                                    "hover:bg-amber-50/50 transition-colors",
+                                    isSelected && "bg-amber-50"
+                                  )}
+                                >
+                                  <td className="p-3.5 pl-4">
+                                    <button
+                                      onClick={() => toggleSelectUmat(u.id)}
+                                      className={cn(
+                                        "w-5 h-5 rounded-lg border flex items-center justify-center transition-all",
+                                        isSelected 
+                                          ? "bg-amber-500 border-amber-500 text-stone-950" 
+                                          : "border-stone-300 text-transparent hover:border-amber-400"
+                                      )}
+                                    >
+                                      <CheckCircle2 size={12} />
+                                    </button>
+                                  </td>
+                                  <td className="p-3.5">
+                                    <div className="font-serif font-bold text-sm text-stone-900">{u.nama}</div>
+                                    {u.namaPinyin && <div className="text-[10px] font-bold text-stone-400 uppercase">{u.namaPinyin}</div>}
+                                    {u.namaIndonesia && <div className="text-[11px] font-semibold text-rose-600/80 uppercase">{u.namaIndonesia}</div>}
+                                  </td>
+                                  <td className="p-3.5 font-mono font-bold text-stone-600">{u.noId}</td>
+                                  <td className="p-3.5">
+                                    <span className="px-2.5 py-0.5 bg-amber-100 text-amber-900 text-[11px] font-bold rounded-lg border border-amber-200">
+                                      {u.jabatanSuci || 'Umat'}
+                                    </span>
+                                  </td>
+                                  <td className="p-3.5 font-medium text-stone-700">{u.vihara || '-'}</td>
+                                  <td className="p-3.5 font-medium text-stone-700">{u.pandita || '-'}</td>
+                                  <td className="p-3.5 text-stone-600">{u.tanggalMohonTao || '-'}</td>
+                                  <td className="p-3.5">
+                                    <div className="flex items-center justify-center gap-1.5">
+                                      <button
+                                        onClick={() => setSelectedUmat(u)}
+                                        className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold rounded-lg text-[11px] flex items-center gap-1 shadow-xs"
+                                        title="Cetak ID Card"
+                                      >
+                                        <IdCardIcon size={12} />
+                                        <span>Card</span>
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setEditingUmat(u);
+                                          setActiveTab('input');
+                                        }}
+                                        className="p-1.5 text-stone-600 hover:bg-stone-200 rounded-lg transition-colors"
+                                        title="Edit"
+                                      >
+                                        <Pencil size={14} />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteUmat(u.id)}
+                                        className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="Hapus"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       </div>
                     </div>
-                  )}
-                </div>
+                  )
+                ) : (
+                  <div className="bg-white rounded-3xl border border-stone-200 border-dashed py-16 px-8 text-center space-y-4">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-stone-50 rounded-full text-stone-300">
+                      <Users size={32} />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="font-serif text-lg font-bold text-stone-700">Tidak ada data umat ditemukan</p>
+                      <p className="text-xs text-stone-400">Silakan ubah kata kunci pencarian atau tambah data umat baru.</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setEditingUmat(null);
+                        setActiveTab('input');
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-stone-950 rounded-xl text-xs font-bold transition-all shadow-sm"
+                    >
+                      <Plus size={14} />
+                      <span>Input Umat Baru</span>
+                    </button>
+                  </div>
+                )}
               </motion.div>
             ) : activeTab === 'relations' ? (
               <motion.div
@@ -3498,6 +3813,16 @@ function MasterDataManager({
   const [pName, setPName] = useState('');
   const [pPinyin, setPPinyin] = useState('');
 
+  // Edit states for Vihara
+  const [editingVIndex, setEditingVIndex] = useState<number | null>(null);
+  const [editVName, setEditVName] = useState('');
+  const [editVPinyin, setEditVPinyin] = useState('');
+
+  // Edit states for Pandita
+  const [editingPIndex, setEditingPIndex] = useState<number | null>(null);
+  const [editPName, setEditPName] = useState('');
+  const [editPPinyin, setEditPPinyin] = useState('');
+
   const addVihara = () => {
     if (!vName) return;
     const cleaned = vName.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -3506,11 +3831,27 @@ function MasterDataManager({
     setVPinyin('');
   };
 
+  const startEditVihara = (index: number) => {
+    setEditingVIndex(index);
+    setEditVName(viharas[index].name);
+    setEditVPinyin(viharas[index].pinyin || '');
+  };
+
+  const saveEditVihara = (index: number) => {
+    if (!editVName) return;
+    const cleaned = editVName.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+    const newList = [...viharas];
+    newList[index] = { name: cleaned.toUpperCase(), pinyin: (editVPinyin || '').toUpperCase() };
+    setViharas(newList);
+    setEditingVIndex(null);
+  };
+
   const removeVihara = (index: number) => {
     if (window.confirm(`Apakah Anda yakin ingin menghapus Vihara ${viharas[index].name}?`)) {
       const newList = [...viharas];
       newList.splice(index, 1);
       setViharas(newList);
+      if (editingVIndex === index) setEditingVIndex(null);
     }
   };
 
@@ -3523,11 +3864,28 @@ function MasterDataManager({
     setPPinyin('');
   };
 
+  const startEditPandita = (index: number) => {
+    setEditingPIndex(index);
+    setEditPName(panditas[index].name);
+    setEditPPinyin(panditas[index].pinyin || '');
+  };
+
+  const saveEditPandita = (index: number) => {
+    if (!editPName) return;
+    const cleaned = editPName.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+    const formatted = formatPanditaName(cleaned);
+    const newList = [...panditas];
+    newList[index] = { name: formatted.toUpperCase(), pinyin: (editPPinyin || '').toUpperCase() };
+    setPanditas(newList);
+    setEditingPIndex(null);
+  };
+
   const removePandita = (index: number) => {
     if (window.confirm(`Apakah Anda yakin ingin menghapus Pandita ${panditas[index].name}?`)) {
       const newList = [...panditas];
       newList.splice(index, 1);
       setPanditas(newList);
+      if (editingPIndex === index) setEditingPIndex(null);
     }
   };
 
@@ -3570,13 +3928,61 @@ function MasterDataManager({
           <div className="space-y-2">
             {viharas.map((v, i) => (
               <div key={i} className="bg-white border border-stone-100 px-4 py-3 rounded-2xl flex items-center justify-between group animate-in slide-in-from-left-2 duration-300">
-                <div>
-                  <p className="font-bold text-stone-800 text-sm">{v.name}</p>
-                  <p className="text-[10px] text-stone-400 font-bold uppercase tracking-widest">{v.pinyin}</p>
-                </div>
-                <button onClick={() => removeVihara(i)} className="text-stone-300 hover:text-red-500 p-2 opacity-0 group-hover:opacity-100 transition-all">
-                  <Trash2 size={16} />
-                </button>
+                {editingVIndex === i ? (
+                  <div className="flex-1 flex flex-col sm:flex-row items-center gap-2 mr-2">
+                    <input 
+                      value={editVName}
+                      onChange={e => setEditVName(e.target.value)}
+                      placeholder="Nama Vihara"
+                      className="w-full sm:w-1/2 bg-stone-50 border border-amber-300 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-amber-500"
+                    />
+                    <input 
+                      value={editVPinyin}
+                      onChange={e => setEditVPinyin(e.target.value)}
+                      placeholder="Pinyin Vihara"
+                      className="w-full sm:w-1/2 bg-stone-50 border border-amber-300 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-amber-500"
+                    />
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button 
+                        onClick={() => saveEditVihara(i)} 
+                        className="p-1.5 bg-amber-500 text-stone-950 rounded-lg hover:bg-amber-600 transition-colors"
+                        title="Simpan"
+                      >
+                        <Check size={14} />
+                      </button>
+                      <button 
+                        onClick={() => setEditingVIndex(null)} 
+                        className="p-1.5 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300 transition-colors"
+                        title="Batal"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <p className="font-bold text-stone-800 text-sm">{v.name}</p>
+                      {v.pinyin && <p className="text-[10px] text-stone-400 font-bold uppercase tracking-widest">{v.pinyin}</p>}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button 
+                        onClick={() => startEditVihara(i)} 
+                        className="text-stone-400 hover:text-amber-600 p-2 opacity-0 group-hover:opacity-100 transition-all rounded-lg hover:bg-amber-50"
+                        title="Edit Vihara"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button 
+                        onClick={() => removeVihara(i)} 
+                        className="text-stone-400 hover:text-red-500 p-2 opacity-0 group-hover:opacity-100 transition-all rounded-lg hover:bg-red-50"
+                        title="Hapus Vihara"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
@@ -3613,13 +4019,61 @@ function MasterDataManager({
           <div className="space-y-2">
             {panditas.map((p, i) => (
               <div key={i} className="bg-white border border-stone-100 px-4 py-3 rounded-2xl flex items-center justify-between group animate-in slide-in-from-left-2 duration-300">
-                <div>
-                  <p className="font-bold text-stone-800 text-sm">{p.name}</p>
-                  {p.pinyin && <p className="text-[10px] text-stone-400 font-bold uppercase tracking-widest">{p.pinyin}</p>}
-                </div>
-                <button onClick={() => removePandita(i)} className="text-stone-300 hover:text-red-500 p-2 opacity-0 group-hover:opacity-100 transition-all">
-                  <Trash2 size={16} />
-                </button>
+                {editingPIndex === i ? (
+                  <div className="flex-1 flex flex-col sm:flex-row items-center gap-2 mr-2">
+                    <input 
+                      value={editPName}
+                      onChange={e => setEditPName(e.target.value)}
+                      placeholder="Nama Pandita"
+                      className="w-full sm:w-1/2 bg-stone-50 border border-amber-300 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-amber-500"
+                    />
+                    <input 
+                      value={editPPinyin}
+                      onChange={e => setEditPPinyin(e.target.value)}
+                      placeholder="Pinyin Pandita"
+                      className="w-full sm:w-1/2 bg-stone-50 border border-amber-300 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-amber-500"
+                    />
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button 
+                        onClick={() => saveEditPandita(i)} 
+                        className="p-1.5 bg-amber-500 text-stone-950 rounded-lg hover:bg-amber-600 transition-colors"
+                        title="Simpan"
+                      >
+                        <Check size={14} />
+                      </button>
+                      <button 
+                        onClick={() => setEditingPIndex(null)} 
+                        className="p-1.5 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300 transition-colors"
+                        title="Batal"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <p className="font-bold text-stone-800 text-sm">{p.name}</p>
+                      {p.pinyin && <p className="text-[10px] text-stone-400 font-bold uppercase tracking-widest">{p.pinyin}</p>}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button 
+                        onClick={() => startEditPandita(i)} 
+                        className="text-stone-400 hover:text-amber-600 p-2 opacity-0 group-hover:opacity-100 transition-all rounded-lg hover:bg-amber-50"
+                        title="Edit Pandita"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button 
+                        onClick={() => removePandita(i)} 
+                        className="text-stone-400 hover:text-red-500 p-2 opacity-0 group-hover:opacity-100 transition-all rounded-lg hover:bg-red-50"
+                        title="Hapus Pandita"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
