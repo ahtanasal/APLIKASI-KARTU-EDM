@@ -195,18 +195,24 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
           <img src="/images/front_logo.png" alt="Logo" className="w-[42px] h-[42px] object-contain opacity-95" />
         </div>
         {/* Text container aligned with Value column (70%) */}
-        <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-0.5 px-2">
-          <div className="w-full flex justify-between items-center font-dfkai font-bold text-rose-950 text-[19px] leading-none">
-            <span>發</span>
-            <span>一</span>
-            <span>崇</span>
-            <span>德</span>
-          </div>
-          <div className="w-full flex justify-between items-center font-black text-rose-900 text-[9.5px] font-sans leading-none uppercase mt-1">
-            <span>FA</span>
-            <span>YI</span>
-            <span>CHONG</span>
-            <span>DE</span>
+        <div className="flex-1 flex items-center justify-center h-full px-1.5">
+          <div className="w-full grid grid-cols-4 gap-0 text-center items-center">
+            <div className="flex flex-col items-center justify-center">
+              <span className="font-dfkai text-rose-950 text-[20px] leading-none font-normal">發</span>
+              <span className="font-sans font-medium text-rose-900 text-[10.5px] leading-none uppercase mt-0.5 tracking-tight">FA</span>
+            </div>
+            <div className="flex flex-col items-center justify-center">
+              <span className="font-dfkai text-rose-950 text-[20px] leading-none font-normal">一</span>
+              <span className="font-sans font-medium text-rose-900 text-[10.5px] leading-none uppercase mt-0.5 tracking-tight">YI</span>
+            </div>
+            <div className="flex flex-col items-center justify-center">
+              <span className="font-dfkai text-rose-950 text-[20px] leading-none font-normal">崇</span>
+              <span className="font-sans font-medium text-rose-900 text-[10.5px] leading-none uppercase mt-0.5 tracking-tight">CHONG</span>
+            </div>
+            <div className="flex flex-col items-center justify-center">
+              <span className="font-dfkai text-rose-950 text-[20px] leading-none font-normal">德</span>
+              <span className="font-sans font-medium text-rose-900 text-[10.5px] leading-none uppercase mt-0.5 tracking-tight">DE</span>
+            </div>
           </div>
         </div>
       </div>
@@ -224,9 +230,10 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
             
             // Special handling for sub-values based on field ID or key
             if (field.id === 'date') {
-              const lunarFull = getLunarDateFallback(data.tanggalMasehi, data.tanggalLunar, data.waktu);
+              const lunarFull = getLunarDateFallback(data.tanggalMasehi, data.tanggalLunar, data.waktu).replace(/[\r\n]+/g, ' ').trim();
               const formattedMasehi = formatGregorianDate(data.tanggalMasehi);
-              value = `${lunarFull}${formattedMasehi ? `\n${formattedMasehi}` : ''}`;
+              value = lunarFull;
+              subValue = formattedMasehi;
             } else if (field.id === 'pandita') {
               subValue = getPinyinFallback(data.pandita, data.panditaPinyin);
             } else if (field.id === 'pengajak') {
@@ -254,7 +261,7 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
               isMasehi={fieldId === 'date'}
               isLast={idx === arr.length - 1}
               forceSmall={true}
-              isSingleLineOnly={fieldId !== 'date'}
+              isSingleLineOnly={true}
             />
           );
         })}
@@ -329,14 +336,14 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
           )}>
             <p 
               className={cn(
-                "leading-none",
-                (/[\u4e00-\u9fa5]/.test(data.nama || data.namaIndonesia || '')) ? "font-dfkai font-bold" : "font-sans font-black"
+                "leading-none font-normal",
+                (/[\u4e00-\u9fa5]/.test(data.nama || data.namaIndonesia || '')) ? "font-dfkai" : "font-sans"
               )}
               style={{ 
-                fontSize: (data.nama || data.namaIndonesia).length > 20 ? '10px' : 
-                          (data.nama || data.namaIndonesia).length > 15 ? '12px' : 
-                          (data.nama || data.namaIndonesia).length > 10 ? '14px' : '16px',
-                fontWeight: (/[\u4e00-\u9fa5]/.test(data.nama || data.namaIndonesia || '')) ? 700 : 900
+                fontSize: (data.nama || data.namaIndonesia).length > 20 ? '11px' : 
+                          (data.nama || data.namaIndonesia).length > 15 ? '13px' : 
+                          (data.nama || data.namaIndonesia).length > 10 ? '15px' : '17px',
+                fontWeight: 400
               }}
             >
               {data.nama || data.namaIndonesia}
@@ -345,11 +352,11 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
               <>
                 <div className="w-[1px] h-3 bg-rose-300/40" />
                 <p 
-                  className="font-black text-black uppercase font-sans tracking-tight"
+                  className="font-normal text-black uppercase font-sans tracking-tight"
                   style={{ 
-                    fontSize: data.namaPinyin.length > 25 ? '7px' : 
-                              data.namaPinyin.length > 20 ? '8px' : '10px',
-                    fontWeight: 900
+                    fontSize: data.namaPinyin.length > 25 ? '8px' : 
+                              data.namaPinyin.length > 20 ? '9px' : '11px',
+                    fontWeight: 400
                   }}
                 >
                   {data.namaPinyin}
@@ -362,12 +369,12 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
 
       {/* Info and QR Code Positioned dynamically */}
       <div className={cn(
-        "absolute z-30 bg-white/70 backdrop-blur-[1px] rounded-md flex flex-col items-center gap-0.5 p-0.5 w-[55px] overflow-hidden",
-        settings.qrPosition === 'bottom-right' && "bottom-1.5 right-1.5",
-        settings.qrPosition === 'bottom-left' && "bottom-1.5 left-1.5",
-        settings.qrPosition === 'top-left' && "top-1.5 left-1.5",
-        settings.qrPosition === 'top-right' && "top-1.5 right-1.5",
-        settings.qrPosition === 'bottom-center' && "bottom-1.5 left-1/2 -translate-x-1/2"
+        "absolute z-30 bg-white/70 backdrop-blur-[1px] rounded-md flex flex-col items-center gap-0.5 p-0.5 w-[55px] overflow-hidden shadow-sm",
+        settings.qrPosition === 'bottom-right' && "bottom-3.5 right-3.5",
+        settings.qrPosition === 'bottom-left' && "bottom-3.5 left-3.5",
+        settings.qrPosition === 'top-left' && "top-3.5 left-3.5",
+        settings.qrPosition === 'top-right' && "top-3.5 right-3.5",
+        settings.qrPosition === 'bottom-center' && "bottom-3.5 left-1/2 -translate-x-1/2"
       )}>
         <div className="flex items-center justify-center">
           <QRCodeSVG value={data.noId} size={51} fgColor="#000000" />
@@ -376,10 +383,10 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
           {Array.from(data.noId || '').map((char, idx) => (
             <span 
               key={idx}
-              className="font-black text-black font-mono leading-none"
+              className="font-normal text-black font-mono leading-none"
               style={{ 
                 fontSize: getDynamicIdFontSize(data.noId),
-                fontWeight: 900
+                fontWeight: 400
               }}
             >
               {char === ' ' ? '\u00A0' : char}
@@ -601,92 +608,129 @@ interface TraditionalRowProps {
 }
 
 const TraditionalRow: React.FC<TraditionalRowProps> = ({ 
-  label, chLabel, value, subValue, isLast = false, isCentered = false, isLarge = false, isMasehi = false, forceSmall = false, isSingleLineOnly = false 
+  label, chLabel, value, subValue, isLast = false, isCentered = false, isLarge = false, isMasehi = false, forceSmall = false, isSingleLineOnly = true 
 }) => {
-  const isDate = isMasehi; 
   const valLen = value ? value.length : 0;
   const subValLen = subValue ? subValue.length : 0;
 
-  // Determine dynamic font size for the value - optimized for clear vector print readability (increased by ~15%)
-  let dynamicValueFontSize = '13.5px';
-  if (isSingleLineOnly || isLarge) {
-    // Specifically for Nama, Vihara, or other prominent fields
-    if (valLen <= 3) {
-      dynamicValueFontSize = forceSmall ? '18.5px' : '19.5px';
-    } else if (valLen <= 6) {
-      dynamicValueFontSize = forceSmall ? '16.5px' : '17.5px';
-    } else if (valLen <= 10) {
-      dynamicValueFontSize = forceSmall ? '14.8px' : '15.8px';
-    } else if (valLen <= 15) {
-      dynamicValueFontSize = forceSmall ? '13.2px' : '14.2px';
-    } else if (valLen <= 20) {
-      dynamicValueFontSize = forceSmall ? '11.5px' : '12.5px';
-    } else if (valLen <= 25) {
-      dynamicValueFontSize = forceSmall ? '10.0px' : '11.0px';
-    } else if (valLen <= 30) {
-      dynamicValueFontSize = forceSmall ? '8.8px' : '9.8px';
-    } else {
-      dynamicValueFontSize = forceSmall ? '7.8px' : '8.8px';
-    }
-  } else if (isDate) {
-    const lines = value ? value.split('\n') : [];
-    const maxLineLen = lines.reduce((max, line) => Math.max(max, line.length), 0);
-    if (maxLineLen > 25) {
-      dynamicValueFontSize = forceSmall ? '9.2px' : '10.2px';
-    } else if (maxLineLen > 18) {
-      dynamicValueFontSize = forceSmall ? '10.8px' : '11.8px';
-    } else if (maxLineLen > 12) {
-      dynamicValueFontSize = forceSmall ? '12.0px' : '13.0px';
-    } else {
-      dynamicValueFontSize = forceSmall ? '13.0px' : '14.0px';
-    }
-  } else {
-    // Other smaller fields
-    if (valLen <= 4) {
+  const hasChineseValue = value ? /[\u4e00-\u9fa5]/.test(value) : false;
+  const hasChineseSubValue = subValue ? /[\u4e00-\u9fa5]/.test(subValue) : false;
+
+  // Determine dynamic font size for the value - optimized to maximize font size in available card space without wrapping
+  let dynamicValueFontSize = '14.5px';
+  if (isMasehi) {
+    if (valLen <= 5) {
       dynamicValueFontSize = forceSmall ? '15.0px' : '16.0px';
     } else if (valLen <= 8) {
+      dynamicValueFontSize = forceSmall ? '13.0px' : '14.0px';
+    } else if (valLen <= 11) {
+      dynamicValueFontSize = forceSmall ? '11.0px' : '12.0px';
+    } else if (valLen <= 15) {
+      dynamicValueFontSize = forceSmall ? '9.5px' : '10.5px';
+    } else if (valLen <= 20) {
+      dynamicValueFontSize = forceSmall ? '8.2px' : '9.2px';
+    } else {
+      dynamicValueFontSize = forceSmall ? '7.2px' : '8.2px';
+    }
+  } else if (hasChineseValue) {
+    if (valLen <= 4) {
+      dynamicValueFontSize = forceSmall ? '17.5px' : '18.5px';
+    } else if (valLen <= 7) {
+      dynamicValueFontSize = forceSmall ? '15.5px' : '16.5px';
+    } else if (valLen <= 10) {
       dynamicValueFontSize = forceSmall ? '13.8px' : '14.8px';
     } else if (valLen <= 14) {
-      dynamicValueFontSize = forceSmall ? '12.5px' : '13.5px';
+      dynamicValueFontSize = forceSmall ? '12.2px' : '13.2px';
+    } else if (valLen <= 18) {
+      dynamicValueFontSize = forceSmall ? '10.8px' : '11.8px';
+    } else {
+      dynamicValueFontSize = forceSmall ? '9.2px' : '10.2px';
+    }
+  } else if (isSingleLineOnly || isLarge) {
+    if (valLen <= 3) {
+      dynamicValueFontSize = forceSmall ? '20.0px' : '21.0px';
+    } else if (valLen <= 6) {
+      dynamicValueFontSize = forceSmall ? '18.5px' : '19.5px';
+    } else if (valLen <= 10) {
+      dynamicValueFontSize = forceSmall ? '17.0px' : '18.0px';
+    } else if (valLen <= 15) {
+      dynamicValueFontSize = forceSmall ? '15.5px' : '16.5px';
     } else if (valLen <= 20) {
+      dynamicValueFontSize = forceSmall ? '14.0px' : '15.0px';
+    } else if (valLen <= 25) {
+      dynamicValueFontSize = forceSmall ? '12.5px' : '13.5px';
+    } else if (valLen <= 30) {
       dynamicValueFontSize = forceSmall ? '11.0px' : '12.0px';
     } else {
       dynamicValueFontSize = forceSmall ? '9.5px' : '10.5px';
     }
-  }
-
-  // Determine dynamic font size for the subValue (usually Chinese block/pinyin text) - increased for print readability
-  let dynamicSubValueFontSize = '11px';
-  if (subValue) {
-    if (isSingleLineOnly || isLarge) {
-      if (subValLen <= 4) {
-        dynamicSubValueFontSize = forceSmall ? '14.0px' : '15.0px';
-      } else if (subValLen <= 8) {
-        dynamicSubValueFontSize = forceSmall ? '12.5px' : '13.5px';
-      } else if (subValLen <= 14) {
-        dynamicSubValueFontSize = forceSmall ? '11.0px' : '12.0px';
-      } else if (subValLen <= 20) {
-        dynamicSubValueFontSize = forceSmall ? '10.0px' : '11.0px';
-      } else if (subValLen <= 28) {
-        dynamicSubValueFontSize = forceSmall ? '8.8px' : '9.8px';
-      } else {
-        dynamicSubValueFontSize = forceSmall ? '7.8px' : '8.8px';
-      }
+  } else {
+    if (valLen <= 4) {
+      dynamicValueFontSize = forceSmall ? '17.0px' : '18.0px';
+    } else if (valLen <= 8) {
+      dynamicValueFontSize = forceSmall ? '15.5px' : '16.5px';
+    } else if (valLen <= 14) {
+      dynamicValueFontSize = forceSmall ? '14.0px' : '15.0px';
+    } else if (valLen <= 20) {
+      dynamicValueFontSize = forceSmall ? '12.5px' : '13.5px';
     } else {
-      if (subValLen <= 6) {
-        dynamicSubValueFontSize = forceSmall ? '11.5px' : '12.5px';
-      } else if (subValLen <= 12) {
-        dynamicSubValueFontSize = forceSmall ? '10.5px' : '11.5px';
-      } else if (subValLen <= 18) {
-        dynamicSubValueFontSize = forceSmall ? '9.2px' : '10.2px';
-      } else {
-        dynamicSubValueFontSize = forceSmall ? '8.2px' : '9.2px';
-      }
+      dynamicValueFontSize = forceSmall ? '11.0px' : '12.0px';
     }
   }
 
-  const hasChineseValue = value ? /[\u4e00-\u9fa5]/.test(value) : false;
-  const hasChineseSubValue = subValue ? /[\u4e00-\u9fa5]/.test(subValue) : false;
+  // Determine dynamic font size for the subValue (usually Pinyin/Indonesian text) - maximized for readability
+  let dynamicSubValueFontSize = '12.5px';
+  if (subValue) {
+    if (isMasehi) {
+      if (subValLen <= 8) {
+        dynamicSubValueFontSize = forceSmall ? '12.5px' : '13.5px';
+      } else if (subValLen <= 12) {
+        dynamicSubValueFontSize = forceSmall ? '11.0px' : '12.0px';
+      } else if (subValLen <= 16) {
+        dynamicSubValueFontSize = forceSmall ? '9.8px' : '10.8px';
+      } else {
+        dynamicSubValueFontSize = forceSmall ? '8.5px' : '9.5px';
+      }
+    } else if (hasChineseSubValue) {
+      if (subValLen <= 4) {
+        dynamicSubValueFontSize = forceSmall ? '15.5px' : '16.5px';
+      } else if (subValLen <= 7) {
+        dynamicSubValueFontSize = forceSmall ? '14.0px' : '15.0px';
+      } else if (subValLen <= 10) {
+        dynamicSubValueFontSize = forceSmall ? '12.5px' : '13.5px';
+      } else if (subValLen <= 14) {
+        dynamicSubValueFontSize = forceSmall ? '11.2px' : '12.2px';
+      } else if (subValLen <= 18) {
+        dynamicSubValueFontSize = forceSmall ? '10.0px' : '11.0px';
+      } else {
+        dynamicSubValueFontSize = forceSmall ? '8.8px' : '9.8px';
+      }
+    } else if (isSingleLineOnly || isLarge) {
+      if (subValLen <= 4) {
+        dynamicSubValueFontSize = forceSmall ? '16.5px' : '17.5px';
+      } else if (subValLen <= 8) {
+        dynamicSubValueFontSize = forceSmall ? '15.0px' : '16.0px';
+      } else if (subValLen <= 14) {
+        dynamicSubValueFontSize = forceSmall ? '13.5px' : '14.5px';
+      } else if (subValLen <= 20) {
+        dynamicSubValueFontSize = forceSmall ? '12.2px' : '13.2px';
+      } else if (subValLen <= 28) {
+        dynamicSubValueFontSize = forceSmall ? '10.8px' : '11.8px';
+      } else {
+        dynamicSubValueFontSize = forceSmall ? '9.5px' : '10.5px';
+      }
+    } else {
+      if (subValLen <= 6) {
+        dynamicSubValueFontSize = forceSmall ? '13.5px' : '14.5px';
+      } else if (subValLen <= 12) {
+        dynamicSubValueFontSize = forceSmall ? '12.5px' : '13.5px';
+      } else if (subValLen <= 18) {
+        dynamicSubValueFontSize = forceSmall ? '11.2px' : '12.2px';
+      } else {
+        dynamicSubValueFontSize = forceSmall ? '10.0px' : '11.0px';
+      }
+    }
+  }
 
   return (
     <div className={cn(
@@ -726,14 +770,13 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
       <div className={cn("flex-1 flex flex-col justify-center min-w-0 bg-white/10", forceSmall ? "px-1 py-0" : "px-1.5 py-0.5")}>
         <p 
           className={cn(
-            "text-black leading-tight uppercase animate-fade-in",
-            hasChineseValue ? "font-dfkai font-bold" : "font-sans font-black",
-            isCentered && "text-center",
-            isSingleLineOnly ? "whitespace-nowrap overflow-hidden text-ellipsis" : "whitespace-pre-wrap"
+            "text-black leading-tight uppercase animate-fade-in font-normal whitespace-nowrap overflow-hidden text-ellipsis",
+            hasChineseValue ? "font-dfkai" : "font-sans",
+            isCentered && "text-center"
           )}
           style={{ 
             fontSize: dynamicValueFontSize, 
-            fontWeight: hasChineseValue ? 700 : 900 
+            fontWeight: 400 
           }}
         >
           {value || '-'}
@@ -741,15 +784,14 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
         {subValue && (
           <p 
             className={cn(
-              "text-black leading-tight uppercase animate-fade-in",
-              hasChineseSubValue ? "font-dfkai font-bold" : "font-sans font-black",
+              "text-black leading-tight uppercase animate-fade-in font-normal whitespace-nowrap overflow-hidden text-ellipsis",
+              hasChineseSubValue ? "font-dfkai" : "font-sans",
               isCentered && "text-center",
-              isSingleLineOnly ? "whitespace-nowrap overflow-hidden text-ellipsis" : "whitespace-pre-wrap",
               forceSmall ? "mt-0" : "mt-0.5"
             )}
             style={{ 
               fontSize: dynamicSubValueFontSize, 
-              fontWeight: hasChineseSubValue ? 700 : 900 
+              fontWeight: 400 
             }}
           >
             {subValue}

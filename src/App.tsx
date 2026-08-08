@@ -157,6 +157,7 @@ export default function App() {
   const [printMargin, setPrintMargin] = useState<number>(5);
   const [printScale, setPrintScale] = useState<number>(100);
   const [printBackRotation, setPrintBackRotation] = useState<'-90' | '90'>('-90');
+  const [printPaperSize, setPrintPaperSize] = useState<'a4' | '200x300'>('a4');
   const [editingUmat, setEditingUmat] = useState<Umat | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [jabatanFilter, setJabatanFilter] = useState<string>('all');
@@ -570,7 +571,9 @@ export default function App() {
     try {
       if (!printContainerRef.current) return;
       
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = printPaperSize === '200x300' ? 200 : 210;
+      const pdfHeight = printPaperSize === '200x300' ? 300 : 297;
+      const pdf = new jsPDF('p', 'mm', printPaperSize === '200x300' ? [200, 300] : 'a4');
       const pages = printContainerRef.current.querySelectorAll('.a4-page');
       
       if (pages.length === 0) {
@@ -585,8 +588,8 @@ export default function App() {
         // Wait for a small delay so browser completes layout, rendering, and painting
         await new Promise((resolve) => setTimeout(resolve, 300));
 
-        const width = page.offsetWidth || 794;
-        const height = page.offsetHeight || 1123;
+        const width = page.offsetWidth || Math.round(pdfWidth * 3.78);
+        const height = page.offsetHeight || Math.round(pdfHeight * 3.78);
 
         const imgData = await toPng(page, { 
           pixelRatio: 2.2, // Extremely safe, memory efficient, and provides gorgeous retina-grade resolution
@@ -602,9 +605,9 @@ export default function App() {
           }
         });
         
-        if (i > 0) pdf.addPage();
-        // Force image to fit A4 precisely without margins
-        pdf.addImage(imgData, 'PNG', 0, 0, 210, 297, undefined, 'FAST');
+        if (i > 0) pdf.addPage(printPaperSize === '200x300' ? [200, 300] : 'a4');
+        // Force image to fit page precisely without margins
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
       }
       
       pdf.save(`ID_CARDS_EDM_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`);
@@ -1649,13 +1652,44 @@ export default function App() {
                 <div>
                   <h4 className="font-serif font-bold text-sm leading-tight text-white">Panel Cetak Kartu Identitas</h4>
                   <p className="text-[10px] text-stone-400 mt-0.5">
-                    Jumlah: <span className="font-bold text-amber-400">{selectedIds.size}</span> Kartu | Estimasi: <span className="font-bold text-amber-400">{Math.ceil(selectedIds.size / 10)}</span> Lembar A4 (Bolak-Balik)
+                    Jumlah: <span className="font-bold text-amber-400">{selectedIds.size}</span> Kartu | Estimasi: <span className="font-bold text-amber-400">{Math.ceil(selectedIds.size / 10)}</span> Lembar {printPaperSize === '200x300' ? '200x300mm' : 'A4'} (Bolak-Balik)
                   </p>
                 </div>
               </div>
 
               {/* Layout & Spacing Selectors wrapper */}
               <div className="flex flex-col xl:flex-row gap-4 items-stretch xl:items-center">
+                {/* Paper Size Selector */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <span className="text-[10px] uppercase tracking-wider text-amber-400 font-bold shrink-0">Ukuran Kertas:</span>
+                  <div className="flex flex-wrap gap-1 bg-stone-950 p-1 rounded-xl border border-stone-800">
+                    <button
+                      onClick={() => setPrintPaperSize('a4')}
+                      title="Ukuran kertas standar A4 (210 x 297 mm)"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5",
+                        printPaperSize === 'a4'
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      A4 (210 x 297 mm)
+                    </button>
+                    <button
+                      onClick={() => setPrintPaperSize('200x300')}
+                      title="Ukuran kertas khusus 200 x 300 mm"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5",
+                        printPaperSize === '200x300'
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      200 x 300 mm
+                    </button>
+                  </div>
+                </div>
+
                 {/* Layout Mode Selector (Indonesian instructions) */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold shrink-0">Susunan Halaman:</span>
@@ -1925,7 +1959,7 @@ export default function App() {
 
             {/* Print Document Container */}
             <div ref={printContainerRef} className="py-8 print:py-0 w-full flex justify-center">
-              <PrintingView umats={umats.filter(u => selectedIds.has(u.id))} layoutMode={printLayoutMode} gap={printGap} backRotation={printBackRotation} pageMargin={printMargin} printScale={printScale} />
+              <PrintingView umats={umats.filter(u => selectedIds.has(u.id))} layoutMode={printLayoutMode} gap={printGap} backRotation={printBackRotation} pageMargin={printMargin} printScale={printScale} paperSize={printPaperSize} />
             </div>
           </div>
         )}
@@ -1941,16 +1975,23 @@ function PrintingView({
   gap = 2, 
   backRotation = '-90',
   pageMargin = 5,
-  printScale = 100
+  printScale = 100,
+  paperSize = 'a4'
 }: { 
   umats: Umat[], 
   layoutMode?: 'all-fronts-first' | 'interleaved', 
   gap?: number, 
   backRotation?: '-90' | '90',
   pageMargin?: number,
-  printScale?: number
+  printScale?: number,
+  paperSize?: 'a4' | '200x300'
 }) {
-  // Items per A4 page (e.g., 2 columns x 5 rows = 10 ID cards)
+  // Page dimensions (A4: 210x297mm vs 200x300mm)
+  const pWidth = paperSize === '200x300' ? 200 : 210;
+  const pHeight = paperSize === '200x300' ? 300 : 297;
+  const halfWidth = pWidth / 2;
+
+  // Items per page (e.g., 2 columns x 5 rows = 10 ID cards)
   const batchSize = 10;
   const batches: Umat[][] = [];
   for (let i = 0; i < umats.length; i += batchSize) {
@@ -1978,8 +2019,8 @@ function PrintingView({
   };
 
   // Safe vertical gap math ensuring top/bottom pageMargin are strictly respected
-  // Total page height = 297mm. Card grid height = 270mm (5 * 54mm).
-  const maxGap = Math.max(0, (297 - 270 - (2 * pageMargin)) / 4);
+  // Total page height = pHeight mm. Card grid height = 270mm (5 * 54mm).
+  const maxGap = Math.max(0, (pHeight - 270 - (2 * pageMargin)) / 4);
   const safeGap = Math.min(gap, maxGap);
 
   return (
@@ -2051,8 +2092,8 @@ function PrintingView({
           html, body {
             margin: 0 !important;
             padding: 0 !important;
-            width: 210mm !important;
-            height: 297mm !important;
+            width: ${pWidth}mm !important;
+            height: ${pHeight}mm !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
@@ -2068,12 +2109,12 @@ function PrintingView({
             padding: 0 !important;
             margin: 0 !important;
           }
-          @page { size: A4 portrait; margin: 0; }
+          @page { size: ${paperSize === '200x300' ? '200mm 300mm' : 'A4 portrait'}; margin: 0; }
         }
         
         .a4-page {
-          width: 210mm;
-          height: 297mm;
+          width: ${pWidth}mm;
+          height: ${pHeight}mm;
           margin: 0 auto 20mm;
           background: white;
           box-shadow: 0 0 10px rgba(0,0,0,0.1);
@@ -2091,8 +2132,8 @@ function PrintingView({
 
         .a4-grid {
           display: grid;
-          width: 210mm;
-          grid-template-columns: 105mm 105mm;
+          width: ${pWidth}mm;
+          grid-template-columns: ${halfWidth}mm ${halfWidth}mm;
           grid-template-rows: repeat(5, 54mm);
           row-gap: ${safeGap}mm;
           column-gap: 0mm;
@@ -2109,7 +2150,7 @@ function PrintingView({
           position: absolute;
           top: 0;
           bottom: 0;
-          left: 105mm;
+          left: ${halfWidth}mm;
           width: 0;
           border-left: 1px dashed rgba(0, 0, 0, 0.15);
           pointer-events: none;
@@ -2125,8 +2166,8 @@ function PrintingView({
             break-after: page !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
-            width: 210mm !important;
-            height: 297mm !important;
+            width: ${pWidth}mm !important;
+            height: ${pHeight}mm !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -2134,7 +2175,7 @@ function PrintingView({
           }
 
           .a4-grid {
-            width: 210mm !important;
+            width: ${pWidth}mm !important;
             margin: 0 auto !important;
             padding: 0 !important;
             box-sizing: border-box !important;
