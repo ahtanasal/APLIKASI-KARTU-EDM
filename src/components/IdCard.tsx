@@ -621,128 +621,122 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
   const hasChineseValue = value ? /[\u4e00-\u9fa5]/.test(value) : false;
   const hasChineseSubValue = subValue ? /[\u4e00-\u9fa5]/.test(subValue) : false;
 
-  // Determine dynamic font size for the value - optimized to maximize font size in available card space without wrapping
+  // Determine dynamic font size for the value - optimized so long text scales down and NEVER gets truncated/cut off
   let dynamicValueFontSize = '14.5px';
   if (isMasehi) {
+    // For date / Gregorian / Lunar Date values
     const chineseCount = (value.match(/[\u4e00-\u9fa5]/g) || []).length;
     const asciiCount = valLen - chineseCount;
     const effectiveLen = chineseCount * 1.85 + asciiCount;
 
-    if (effectiveLen <= 8) {
-      dynamicValueFontSize = forceSmall ? '15.5px' : '16.5px';
-    } else if (effectiveLen <= 12) {
-      dynamicValueFontSize = forceSmall ? '13.8px' : '14.8px';
-    } else if (effectiveLen <= 16) {
-      dynamicValueFontSize = forceSmall ? '12.2px' : '13.2px';
-    } else if (effectiveLen <= 20) {
-      dynamicValueFontSize = forceSmall ? '11.0px' : '11.8px';
-    } else if (effectiveLen <= 25) {
-      dynamicValueFontSize = forceSmall ? '9.8px' : '10.5px';
-    } else if (effectiveLen <= 30) {
-      dynamicValueFontSize = forceSmall ? '9.0px' : '9.6px';
-    } else if (effectiveLen <= 36) {
-      dynamicValueFontSize = forceSmall ? '8.3px' : '8.8px';
+    if (effectiveLen <= 6) {
+      dynamicValueFontSize = forceSmall ? '14.5px' : '15.5px';
+    } else if (effectiveLen <= 10) {
+      dynamicValueFontSize = forceSmall ? '12.5px' : '13.5px';
+    } else if (effectiveLen <= 14) {
+      dynamicValueFontSize = forceSmall ? '10.8px' : '11.5px';
+    } else if (effectiveLen <= 18) {
+      dynamicValueFontSize = forceSmall ? '9.2px' : '9.8px';
+    } else if (effectiveLen <= 22) {
+      dynamicValueFontSize = forceSmall ? '8.0px' : '8.6px';
+    } else if (effectiveLen <= 28) {
+      dynamicValueFontSize = forceSmall ? '6.8px' : '7.4px';
+    } else if (effectiveLen <= 35) {
+      dynamicValueFontSize = forceSmall ? '5.8px' : '6.3px';
     } else {
-      dynamicValueFontSize = forceSmall ? '7.8px' : '8.2px';
+      dynamicValueFontSize = forceSmall ? '5.0px' : '5.5px';
     }
   } else if (hasChineseValue) {
-    if (valLen <= 4) {
-      dynamicValueFontSize = forceSmall ? '19.5px' : '20.5px';
-    } else if (valLen <= 7) {
+    // For Chinese values (Mandarin characters)
+    if (valLen <= 2) {
       dynamicValueFontSize = forceSmall ? '17.5px' : '18.5px';
-    } else if (valLen <= 10) {
-      dynamicValueFontSize = forceSmall ? '15.8px' : '16.8px';
-    } else if (valLen <= 14) {
-      dynamicValueFontSize = forceSmall ? '14.2px' : '15.2px';
-    } else if (valLen <= 18) {
-      dynamicValueFontSize = forceSmall ? '12.8px' : '13.8px';
-    } else {
-      dynamicValueFontSize = forceSmall ? '11.2px' : '12.2px';
-    }
-  } else if (isSingleLineOnly || isLarge) {
-    if (valLen <= 3) {
-      dynamicValueFontSize = forceSmall ? '20.0px' : '21.0px';
-    } else if (valLen <= 6) {
-      dynamicValueFontSize = forceSmall ? '18.5px' : '19.5px';
-    } else if (valLen <= 10) {
-      dynamicValueFontSize = forceSmall ? '17.0px' : '18.0px';
-    } else if (valLen <= 15) {
+    } else if (valLen <= 3) {
       dynamicValueFontSize = forceSmall ? '15.5px' : '16.5px';
-    } else if (valLen <= 20) {
-      dynamicValueFontSize = forceSmall ? '14.0px' : '15.0px';
-    } else if (valLen <= 25) {
-      dynamicValueFontSize = forceSmall ? '12.5px' : '13.5px';
-    } else if (valLen <= 30) {
-      dynamicValueFontSize = forceSmall ? '11.0px' : '12.0px';
+    } else if (valLen <= 4) {
+      dynamicValueFontSize = forceSmall ? '13.5px' : '14.5px';
+    } else if (valLen <= 5) {
+      dynamicValueFontSize = forceSmall ? '11.8px' : '12.8px';
+    } else if (valLen <= 6) {
+      dynamicValueFontSize = forceSmall ? '10.5px' : '11.2px';
+    } else if (valLen <= 7) {
+      dynamicValueFontSize = forceSmall ? '9.2px' : '9.8px';
+    } else if (valLen <= 8) {
+      dynamicValueFontSize = forceSmall ? '8.2px' : '8.8px';
+    } else if (valLen <= 10) {
+      dynamicValueFontSize = forceSmall ? '7.2px' : '7.8px';
+    } else if (valLen <= 13) {
+      dynamicValueFontSize = forceSmall ? '6.2px' : '6.8px';
+    } else if (valLen <= 17) {
+      dynamicValueFontSize = forceSmall ? '5.2px' : '5.8px';
     } else {
-      dynamicValueFontSize = forceSmall ? '9.5px' : '10.5px';
+      dynamicValueFontSize = forceSmall ? '4.5px' : '5.0px';
     }
   } else {
-    if (valLen <= 4) {
-      dynamicValueFontSize = forceSmall ? '17.0px' : '18.0px';
-    } else if (valLen <= 8) {
+    // For Latin / ASCII / Standard text values
+    if (valLen <= 3) {
+      dynamicValueFontSize = forceSmall ? '18.0px' : '19.0px';
+    } else if (valLen <= 6) {
       dynamicValueFontSize = forceSmall ? '15.5px' : '16.5px';
+    } else if (valLen <= 10) {
+      dynamicValueFontSize = forceSmall ? '13.0px' : '14.0px';
     } else if (valLen <= 14) {
-      dynamicValueFontSize = forceSmall ? '14.0px' : '15.0px';
-    } else if (valLen <= 20) {
-      dynamicValueFontSize = forceSmall ? '12.5px' : '13.5px';
+      dynamicValueFontSize = forceSmall ? '11.0px' : '11.8px';
+    } else if (valLen <= 18) {
+      dynamicValueFontSize = forceSmall ? '9.2px' : '10.0px';
+    } else if (valLen <= 22) {
+      dynamicValueFontSize = forceSmall ? '8.0px' : '8.6px';
+    } else if (valLen <= 26) {
+      dynamicValueFontSize = forceSmall ? '7.0px' : '7.5px';
+    } else if (valLen <= 30) {
+      dynamicValueFontSize = forceSmall ? '6.2px' : '6.8px';
+    } else if (valLen <= 36) {
+      dynamicValueFontSize = forceSmall ? '5.5px' : '6.0px';
+    } else if (valLen <= 42) {
+      dynamicValueFontSize = forceSmall ? '4.8px' : '5.2px';
     } else {
-      dynamicValueFontSize = forceSmall ? '11.0px' : '12.0px';
+      dynamicValueFontSize = forceSmall ? '4.2px' : '4.6px';
     }
   }
 
-  // Determine dynamic font size for the subValue (usually Pinyin/Indonesian text) - maximized for readability
+  // Determine dynamic font size for subValue (Pinyin / Gregorian Date / Indonesian Name under Chinese name)
   let dynamicSubValueFontSize = '12.5px';
   if (subValue) {
-    if (isMasehi) {
-      if (subValLen <= 10) {
-        dynamicSubValueFontSize = forceSmall ? '14.5px' : '15.5px';
-      } else if (subValLen <= 14) {
-        dynamicSubValueFontSize = forceSmall ? '13.2px' : '14.2px';
-      } else if (subValLen <= 18) {
-        dynamicSubValueFontSize = forceSmall ? '12.0px' : '13.0px';
-      } else if (subValLen <= 22) {
-        dynamicSubValueFontSize = forceSmall ? '10.8px' : '11.8px';
-      } else {
-        dynamicSubValueFontSize = forceSmall ? '9.5px' : '10.5px';
-      }
-    } else if (hasChineseSubValue) {
-      if (subValLen <= 4) {
-        dynamicSubValueFontSize = forceSmall ? '15.5px' : '16.5px';
-      } else if (subValLen <= 7) {
+    if (hasChineseSubValue) {
+      if (subValLen <= 2) {
         dynamicSubValueFontSize = forceSmall ? '14.0px' : '15.0px';
-      } else if (subValLen <= 10) {
-        dynamicSubValueFontSize = forceSmall ? '12.5px' : '13.5px';
-      } else if (subValLen <= 14) {
-        dynamicSubValueFontSize = forceSmall ? '11.2px' : '12.2px';
-      } else if (subValLen <= 18) {
-        dynamicSubValueFontSize = forceSmall ? '10.0px' : '11.0px';
-      } else {
-        dynamicSubValueFontSize = forceSmall ? '8.8px' : '9.8px';
-      }
-    } else if (isSingleLineOnly || isLarge) {
-      if (subValLen <= 4) {
-        dynamicSubValueFontSize = forceSmall ? '16.5px' : '17.5px';
+      } else if (subValLen <= 4) {
+        dynamicSubValueFontSize = forceSmall ? '12.0px' : '13.0px';
+      } else if (subValLen <= 6) {
+        dynamicSubValueFontSize = forceSmall ? '9.8px' : '10.8px';
       } else if (subValLen <= 8) {
-        dynamicSubValueFontSize = forceSmall ? '15.0px' : '16.0px';
+        dynamicSubValueFontSize = forceSmall ? '8.2px' : '9.0px';
+      } else if (subValLen <= 10) {
+        dynamicSubValueFontSize = forceSmall ? '7.2px' : '8.0px';
       } else if (subValLen <= 14) {
-        dynamicSubValueFontSize = forceSmall ? '13.5px' : '14.5px';
-      } else if (subValLen <= 20) {
-        dynamicSubValueFontSize = forceSmall ? '12.2px' : '13.2px';
-      } else if (subValLen <= 28) {
-        dynamicSubValueFontSize = forceSmall ? '10.8px' : '11.8px';
+        dynamicSubValueFontSize = forceSmall ? '6.0px' : '6.8px';
       } else {
-        dynamicSubValueFontSize = forceSmall ? '9.5px' : '10.5px';
+        dynamicSubValueFontSize = forceSmall ? '5.0px' : '5.6px';
       }
     } else {
+      // Latin / Pinyin / Gregorian subValue
       if (subValLen <= 6) {
-        dynamicSubValueFontSize = forceSmall ? '13.5px' : '14.5px';
-      } else if (subValLen <= 12) {
-        dynamicSubValueFontSize = forceSmall ? '12.5px' : '13.5px';
+        dynamicSubValueFontSize = forceSmall ? '13.0px' : '14.0px';
+      } else if (subValLen <= 10) {
+        dynamicSubValueFontSize = forceSmall ? '11.0px' : '12.0px';
+      } else if (subValLen <= 14) {
+        dynamicSubValueFontSize = forceSmall ? '9.2px' : '10.0px';
       } else if (subValLen <= 18) {
-        dynamicSubValueFontSize = forceSmall ? '11.2px' : '12.2px';
+        dynamicSubValueFontSize = forceSmall ? '8.0px' : '8.6px';
+      } else if (subValLen <= 22) {
+        dynamicSubValueFontSize = forceSmall ? '7.0px' : '7.6px';
+      } else if (subValLen <= 26) {
+        dynamicSubValueFontSize = forceSmall ? '6.2px' : '6.8px';
+      } else if (subValLen <= 30) {
+        dynamicSubValueFontSize = forceSmall ? '5.6px' : '6.1px';
+      } else if (subValLen <= 36) {
+        dynamicSubValueFontSize = forceSmall ? '5.0px' : '5.4px';
       } else {
-        dynamicSubValueFontSize = forceSmall ? '10.0px' : '11.0px';
+        dynamicSubValueFontSize = forceSmall ? '4.4px' : '4.8px';
       }
     }
   }
@@ -786,14 +780,13 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
         <p 
           className={cn(
             "text-black leading-tight uppercase animate-fade-in font-normal whitespace-nowrap overflow-hidden",
-            !isMasehi && "text-ellipsis",
             hasChineseValue ? "font-dfkai" : "font-sans",
             isCentered && "text-center"
           )}
           style={{ 
             fontSize: dynamicValueFontSize, 
             fontWeight: 400,
-            letterSpacing: isMasehi && valLen > 10 ? '-0.02em' : 'normal'
+            letterSpacing: (!hasChineseValue && valLen > 18) ? '-0.03em' : (!hasChineseValue && valLen > 12) ? '-0.02em' : 'normal'
           }}
         >
           {value || '-'}
@@ -801,14 +794,15 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
         {subValue && (
           <p 
             className={cn(
-              "text-black leading-tight uppercase animate-fade-in font-normal whitespace-nowrap overflow-hidden text-ellipsis",
+              "text-black leading-tight uppercase animate-fade-in font-normal whitespace-nowrap overflow-hidden",
               hasChineseSubValue ? "font-dfkai" : "font-sans",
               isCentered && "text-center",
               forceSmall ? "mt-0" : "mt-0.5"
             )}
             style={{ 
               fontSize: dynamicSubValueFontSize, 
-              fontWeight: 400 
+              fontWeight: 400,
+              letterSpacing: (!hasChineseSubValue && subValLen > 18) ? '-0.03em' : (!hasChineseSubValue && subValLen > 12) ? '-0.02em' : 'normal'
             }}
           >
             {subValue}
