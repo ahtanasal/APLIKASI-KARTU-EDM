@@ -154,7 +154,7 @@ const getPinyinFallback = (mandarinText: string, currentPinyin: string | undefin
   return (currentPinyin || '').trim().toUpperCase();
 };
 
-const getFittedFontSize = (text: string, baseFontSize: number, maxSpaceWidth: number = 116, minFontSize: number = 4.8): { fontSize: string, letterSpacing: string } => {
+const getFittedFontSize = (text: string, baseFontSize: number, maxSpaceWidth: number = 116, minFontSize: number = 3.8): { fontSize: string, letterSpacing: string } => {
   if (!text) return { fontSize: `${baseFontSize}px`, letterSpacing: 'normal' };
 
   let effectiveLen = 0;
@@ -255,19 +255,19 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
           <div className="w-full grid grid-cols-4 gap-0 text-center items-center">
             <div className="flex flex-col items-center justify-center">
               <span className="font-dfkai text-rose-950 text-[24px] leading-none font-normal">發</span>
-              <span className="font-sans font-medium text-rose-900 text-[12px] leading-none uppercase mt-0.5 tracking-tight">FA</span>
+              <span className="font-sans font-medium text-rose-900 text-[11.4px] leading-none uppercase mt-0.5 tracking-tight">FA</span>
             </div>
             <div className="flex flex-col items-center justify-center">
               <span className="font-dfkai text-rose-950 text-[24px] leading-none font-normal">一</span>
-              <span className="font-sans font-medium text-rose-900 text-[12px] leading-none uppercase mt-0.5 tracking-tight">YI</span>
+              <span className="font-sans font-medium text-rose-900 text-[11.4px] leading-none uppercase mt-0.5 tracking-tight">YI</span>
             </div>
             <div className="flex flex-col items-center justify-center">
               <span className="font-dfkai text-rose-950 text-[24px] leading-none font-normal">崇</span>
-              <span className="font-sans font-medium text-rose-900 text-[12px] leading-none uppercase mt-0.5 tracking-tight">CHONG</span>
+              <span className="font-sans font-medium text-rose-900 text-[11.4px] leading-none uppercase mt-0.5 tracking-tight">CHONG</span>
             </div>
             <div className="flex flex-col items-center justify-center">
               <span className="font-dfkai text-rose-950 text-[24px] leading-none font-normal">德</span>
-              <span className="font-sans font-medium text-rose-900 text-[12px] leading-none uppercase mt-0.5 tracking-tight">DE</span>
+              <span className="font-sans font-medium text-rose-900 text-[11.4px] leading-none uppercase mt-0.5 tracking-tight">DE</span>
             </div>
           </div>
         </div>
@@ -705,7 +705,7 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
   // Max safe width (px) inside Value box before text needs scaling down
   const maxSpaceWidth = forceSmall ? 116 : 124;
 
-  const valueFitting = getFittedFontSize(value, baseValueSize, maxSpaceWidth, 4.8);
+  const valueFitting = getFittedFontSize(value, baseValueSize, maxSpaceWidth, 3.8);
   const dynamicValueFontSize = valueFitting.fontSize;
   const dynamicValueLetterSpacing = valueFitting.letterSpacing;
 
@@ -715,7 +715,7 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
     baseSubValueSize = forceSmall ? 13.5 : 14.5;
   }
 
-  const subValueFitting = getFittedFontSize(subValue || '', baseSubValueSize, maxSpaceWidth, 4.5);
+  const subValueFitting = getFittedFontSize(subValue || '', baseSubValueSize, maxSpaceWidth, 3.8);
   const dynamicSubValueFontSize = subValueFitting.fontSize;
   const dynamicSubValueLetterSpacing = subValueFitting.letterSpacing;
 
