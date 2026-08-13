@@ -635,36 +635,46 @@ export default function App() {
   }
 
   const saveToLocal = async (newUmats: Umat[]) => {
-    // 1. Identify deleted items and delete them in Firestore
+    // 1. Immediately update React state & localStorage so UI updates instantly and reliably
+    setUmats(newUmats);
+    try {
+      localStorage.setItem('edm_umats', JSON.stringify(newUmats));
+    } catch (e) {
+      console.error("Failed to backup to localStorage:", e);
+    }
+
+    // 2. Identify deleted items and delete them in Firestore
     const currentIds = new Set<string>(umats.map(u => u.id || ''));
     const newIds = new Set<string>(newUmats.map(u => u.id || ''));
     const deletedIds = Array.from(currentIds).filter((id): id is string => id !== '' && !newIds.has(id));
-    for (const id of deletedIds) {
+    
+    const deletePromises = deletedIds.map(async (id) => {
       try {
         await deleteDoc(doc(db, 'umats', id));
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to delete umat from Firestore:", err);
       }
-    }
+    });
 
-    // 2. Identify new or changed items and write them to Firestore
+    // 3. Identify new or changed items and write them to Firestore in parallel!
     const changedOrNew = newUmats.filter(nu => {
       const existing = umats.find(u => u.id === nu.id);
       return !existing || JSON.stringify(existing) !== JSON.stringify(nu);
     });
-    for (const u of changedOrNew) {
-      if (!u.id) continue;
+
+    const writePromises = changedOrNew.map(async (u) => {
+      if (!u.id) return;
       try {
         await setDoc(doc(db, 'umats', u.id), u);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to save/update umat in Firestore:", err);
+        if (err.code === 'permission-denied') {
+          handleFirestoreError(err, OperationType.WRITE, `umats/${u.id}`);
+        }
       }
-    }
-    
-    // Also backup to localStorage
-    try {
-      localStorage.setItem('edm_umats', JSON.stringify(newUmats));
-    } catch (e) {}
+    });
+
+    await Promise.allSettled([...deletePromises, ...writePromises]);
   };
 
   const handleSaveUmat = (data: UmatInput) => {
@@ -999,8 +1009,8 @@ export default function App() {
         
         // Auto-detect columns based on predefined keywords
         const keywords: Record<string, string[]> = {
-          noId: ['no id', 'id', 'no. id', 'id umat', 'no_id', 'id_umat', 'id_tao', 'no urut', 'no.', 'no_urut'],
-          nama: ['nama', '求道人', 'name', 'nama mandarin', 'nama_mandarin', 'chinese name', 'hanzi'],
+          noId: ['no id', 'id', 'no. id', 'id umat', 'no_id', 'id_umat', 'id_tao', 'no urut', 'no.', 'no_urut', 'nomor', 'no_kartu'],
+          nama: ['nama pemohon', 'nama pemohon tao', 'pemohon tao', 'pemohon', 'nama', '求道人', 'name', 'nama mandarin', 'nama_mandarin', 'chinese name', 'hanzi'],
           namaIndonesia: ['nama indonesia', 'nama lengkap', 'nama indo', 'indonesia', 'nama_indonesia', 'nama_lengkap', 'full name', 'fullname'],
           namaPinyin: ['pinyin', 'nama pinyin', 'pinyin nama', 'nama_pinyin', 'pinyin_nama', 'ejaan', 'pinyin name'],
           pandita: ['pandita', '點傳師', 'dian chuan shi', 'dianchuan', 'pdt', 'danchuanshi', 'dianchuanshi'],
@@ -1020,10 +1030,18 @@ export default function App() {
         const initialMapping: Record<string, string> = {};
         TARGET_FIELDS.forEach(field => {
           const kws = keywords[field.key] || [];
-          const matchedHeader = headers.find(h => {
+          // 1. Try exact match first
+          let matchedHeader = headers.find(h => {
             const lowerHeader = String(h).trim().toLowerCase();
-            return kws.some(kw => lowerHeader === kw || lowerHeader.includes(kw));
+            return kws.some(kw => lowerHeader === kw);
           });
+          // 2. Fallback to includes match if no exact match found
+          if (!matchedHeader) {
+            matchedHeader = headers.find(h => {
+              const lowerHeader = String(h).trim().toLowerCase();
+              return kws.some(kw => lowerHeader.includes(kw));
+            });
+          }
           initialMapping[field.key] = matchedHeader ? String(matchedHeader) : '';
         });
 
@@ -1041,7 +1059,7 @@ export default function App() {
     reader.readAsBinaryString(file);
   };
 
-  const handleProcessTaoImport = () => {
+  const handleProcessTaoImport = async () => {
     try {
       const importedUmats: Umat[] = taoDataRows.map(row => {
         const getMappedValue = (key: keyof Umat) => {
@@ -1161,14 +1179,14 @@ export default function App() {
       }).filter(u => u.nama || u.namaIndonesia);
 
       if (importedUmats.length === 0) {
-        alert('Tidak ada data valid yang dapat di-import.');
+        alert('Tidak ada data valid yang dapat di-import. Pastikan minimal kolom Nama atau Nama Pemohon terpetakan dengan benar.');
         return;
       }
 
       const combined = [...importedUmats, ...umats];
-      saveToLocal(combined);
       setIsTaoModalOpen(false);
-      alert(`Berhasil mengimpor ${importedUmats.length} data umat dari sistem TAO UK!`);
+      await saveToLocal(combined);
+      alert(`Berhasil mengimpor dan menyimpan ${importedUmats.length} data umat dari sistem TAO UK!`);
     } catch (err) {
       console.error('Error processing TAO import:', err);
       alert('Terjadi kesalahan saat memproses data. Silakan periksa kembali pemetaan kolom.');
@@ -2162,10 +2180,10 @@ export default function App() {
                   </button>
                   <button
                     onClick={handleProcessTaoImport}
-                    disabled={!taoMapping.nama || !taoMapping.noId}
+                    disabled={!(taoMapping.nama || taoMapping.namaIndonesia)}
                     className={cn(
                       "flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all",
-                      (taoMapping.nama && taoMapping.noId)
+                      (taoMapping.nama || taoMapping.namaIndonesia)
                         ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700 hover:shadow-xl hover:shadow-amber-500/10 active:scale-[0.98]"
                         : "bg-stone-200 text-stone-400 cursor-not-allowed shadow-none"
                     )}
