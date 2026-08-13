@@ -244,30 +244,30 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
       
       {/* Header */}
       <div className={cn(
-        "flex items-center relative h-[48px] px-1 bg-white/30 backdrop-blur-[1px] rounded-t-sm border-b border-rose-200/40"
+        "flex items-center relative h-[54px] px-1 bg-white/30 backdrop-blur-[1px] rounded-t-sm border-b border-rose-200/40"
       )}>
         {/* Logo container aligned with Label column (30%) */}
         <div className="w-[30%] flex items-center justify-center h-full">
-          <img src="/images/front_logo.png" alt="Logo" className="w-[42px] h-[42px] object-contain opacity-95" />
+          <img src="/images/front_logo.png" alt="Logo" className="w-[48px] h-[48px] object-contain opacity-95" />
         </div>
         {/* Text container aligned with Value column (70%) */}
         <div className="flex-1 flex items-center justify-center h-full px-1.5">
           <div className="w-full grid grid-cols-4 gap-0 text-center items-center">
             <div className="flex flex-col items-center justify-center">
-              <span className="font-dfkai text-rose-950 text-[20px] leading-none font-normal">發</span>
-              <span className="font-sans font-medium text-rose-900 text-[10.5px] leading-none uppercase mt-0.5 tracking-tight">FA</span>
+              <span className="font-dfkai text-rose-950 text-[24px] leading-none font-normal">發</span>
+              <span className="font-sans font-medium text-rose-900 text-[12px] leading-none uppercase mt-0.5 tracking-tight">FA</span>
             </div>
             <div className="flex flex-col items-center justify-center">
-              <span className="font-dfkai text-rose-950 text-[20px] leading-none font-normal">一</span>
-              <span className="font-sans font-medium text-rose-900 text-[10.5px] leading-none uppercase mt-0.5 tracking-tight">YI</span>
+              <span className="font-dfkai text-rose-950 text-[24px] leading-none font-normal">一</span>
+              <span className="font-sans font-medium text-rose-900 text-[12px] leading-none uppercase mt-0.5 tracking-tight">YI</span>
             </div>
             <div className="flex flex-col items-center justify-center">
-              <span className="font-dfkai text-rose-950 text-[20px] leading-none font-normal">崇</span>
-              <span className="font-sans font-medium text-rose-900 text-[10.5px] leading-none uppercase mt-0.5 tracking-tight">CHONG</span>
+              <span className="font-dfkai text-rose-950 text-[24px] leading-none font-normal">崇</span>
+              <span className="font-sans font-medium text-rose-900 text-[12px] leading-none uppercase mt-0.5 tracking-tight">CHONG</span>
             </div>
             <div className="flex flex-col items-center justify-center">
-              <span className="font-dfkai text-rose-950 text-[20px] leading-none font-normal">德</span>
-              <span className="font-sans font-medium text-rose-900 text-[10.5px] leading-none uppercase mt-0.5 tracking-tight">DE</span>
+              <span className="font-dfkai text-rose-950 text-[24px] leading-none font-normal">德</span>
+              <span className="font-sans font-medium text-rose-900 text-[12px] leading-none uppercase mt-0.5 tracking-tight">DE</span>
             </div>
           </div>
         </div>
@@ -709,11 +709,8 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
   const dynamicValueFontSize = valueFitting.fontSize;
   const dynamicValueLetterSpacing = valueFitting.letterSpacing;
 
-  // Dynamic font sizing for subValue
-  let baseSubValueSize = isPandita 
-    ? (forceSmall ? 13.8 : 14.8)
-    : (forceSmall ? 12.0 : 13.0);
-    
+  // Dynamic font sizing for subValue (Indonesian / Latin text on the right side)
+  let baseSubValueSize = forceSmall ? 12.5 : 13.5;
   if (hasChineseSubValue) {
     baseSubValueSize = forceSmall ? 13.5 : 14.5;
   }
@@ -742,10 +739,12 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
         <span 
           className="font-normal text-rose-950 leading-none whitespace-nowrap" 
           style={{
-            fontSize: label.length > 11
+            fontSize: (fieldId === 'penanggung' || label === 'PENANGGUNG')
+              ? (forceSmall ? '7.0px' : '8.0px')
+              : label.length > 11
               ? (forceSmall ? '8.2px' : '9.2px')
               : (forceSmall ? '9.2px' : '10.2px'),
-            letterSpacing: label.length > 8 ? '-0.03em' : '-0.01em'
+            letterSpacing: (fieldId === 'penanggung' || label === 'PENANGGUNG') ? '-0.04em' : (label.length > 8 ? '-0.03em' : '-0.01em')
           }}
         >
           {label}
