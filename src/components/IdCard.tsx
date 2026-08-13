@@ -730,14 +730,10 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
         <span 
           className="font-black text-rose-950 leading-none whitespace-nowrap" // Avoid semi-transparent text colors for small labels to ensure sharp vector printing (halftone prevention)
           style={{
-            fontSize: label.length > 9 
+            fontSize: label.length > 11
               ? (forceSmall ? '6.8px' : '7.8px')
-              : label.length > 7
-              ? (forceSmall ? '7.6px' : '8.6px')
-              : label.length > 5
-              ? (forceSmall ? '8.3px' : '9.3px')
-              : (forceSmall ? '9.2px' : '10.2px'),
-            letterSpacing: label.length > 7 ? '-0.04em' : '-0.01em'
+              : (forceSmall ? '7.8px' : '8.8px'),
+            letterSpacing: label.length > 8 ? '-0.03em' : '-0.01em'
           }}
         >
           {label}
