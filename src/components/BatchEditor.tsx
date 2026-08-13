@@ -78,21 +78,16 @@ interface BatchEditorProps {
 
 const formatPanditaName = (name: string): string => {
   if (!name) return "";
-  const trimmed = name.trim();
+  const cleanName = name.replace(/點傳師|点传师/g, "").replace(/\s+/g, " ").trim();
+  if (!cleanName) return "";
+  return cleanName + "點傳師";
+};
 
-  // Case A: Exactly 3 Chinese characters without spaces
-  const chineseCharRegex = /^[\u4e00-\u9fa5]{3}$/;
-  if (chineseCharRegex.test(trimmed)) {
-    return trimmed[0] + "點傳師" + trimmed.slice(1);
-  }
-
-  // Case B: 3 words separated by spaces (e.g., "Zhang Zhen Qiu" or "Tan Kim San")
-  const words = trimmed.split(/\s+/).filter(Boolean);
-  if (words.length === 3) {
-    return `${words[0]} 點傳師 ${words[1]} ${words[2]}`;
-  }
-
-  return trimmed;
+const formatPanditaPinyin = (pinyin: string): string => {
+  if (!pinyin) return "";
+  const cleanPinyin = pinyin.replace(/\bPANDITA\b/gi, "").replace(/\s+/g, " ").trim();
+  if (!cleanPinyin) return "";
+  return `PANDITA ${cleanPinyin}`.toUpperCase();
 };
 
 export const BatchEditor: React.FC<BatchEditorProps> = ({
@@ -269,18 +264,22 @@ export const BatchEditor: React.FC<BatchEditorProps> = ({
       
       if (field === 'pandita') {
         const formatPandita = formatPanditaName(updatedVal.trim());
-        newUmat.pandita = formatPandita.toUpperCase();
+        newUmat.pandita = formatPandita;
         if (formatPandita) {
           const matchedMaster = masterPanditas.find(p => (p.name?.trim() || '').toUpperCase() === formatPandita.toUpperCase() || (p.name?.trim() || '').toUpperCase() === updatedVal.trim().toUpperCase());
           if (matchedMaster && matchedMaster.pinyin) {
-            newUmat.panditaPinyin = matchedMaster.pinyin.toUpperCase();
+            newUmat.panditaPinyin = formatPanditaPinyin(matchedMaster.pinyin);
           } else {
             const matched = findPinyinMatchInDrafts(formatPandita, id) || findPinyinMatchInDrafts(updatedVal.trim(), id);
             if (matched) {
-              newUmat.panditaPinyin = matched.toUpperCase();
+              newUmat.panditaPinyin = formatPanditaPinyin(matched);
             }
           }
         }
+      }
+
+      if (field === 'panditaPinyin') {
+        newUmat.panditaPinyin = formatPanditaPinyin(updatedVal.trim());
       }
 
       if (field === 'pengajak') {

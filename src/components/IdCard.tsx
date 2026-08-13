@@ -288,7 +288,15 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
               value = lunarFull;
               subValue = formattedMasehi;
             } else if (field.id === 'pandita') {
-              subValue = getPinyinFallback(data.pandita, data.panditaPinyin);
+              const cleanMandarin = (data.pandita || '').replace(/點傳師|点传师/g, '').replace(/\s+/g, ' ').trim();
+              if (cleanMandarin) {
+                value = cleanMandarin + '點傳師';
+              }
+              const rawPinyin = (data.panditaPinyin || '').trim()
+                ? data.panditaPinyin
+                : getPinyinFallback(cleanMandarin || data.pandita, data.panditaPinyin);
+              const cleanPinyin = rawPinyin.replace(/\bPANDITA\b/gi, '').replace(/\s+/g, ' ').trim();
+              subValue = cleanPinyin ? `PANDITA ${cleanPinyin}`.toUpperCase() : '';
             } else if (field.id === 'pengajak') {
               subValue = getPinyinFallback(data.pengajak, data.pengajakPinyin);
             } else if (field.id === 'penanggung') {
@@ -324,12 +332,14 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
 );
 
 const getDynamicIdFontSize = (idStr: string) => {
-  const len = idStr ? idStr.length : 0;
-  if (len <= 6) return '10.6px';
-  if (len <= 9) return '9.2px';
-  if (len <= 12) return '8.0px';
-  if (len <= 15) return '6.6px';
-  return '6.0px';
+  if (!idStr) return '9px';
+  const cleanLen = idStr.replace(/\s+/g, '').length || idStr.length;
+  if (cleanLen <= 6) return '9.5px';
+  if (cleanLen <= 8) return '8.5px';
+  if (cleanLen <= 10) return '7.5px';
+  if (cleanLen <= 12) return '6.8px';
+  if (cleanLen <= 15) return '6.0px';
+  return '5.2px';
 };
 
 const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceSmall?: boolean, innerRef?: React.RefObject<HTMLDivElement | null>, settings: CardDesignSettings }) => (
@@ -422,7 +432,7 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
 
       {/* Info and QR Code Positioned dynamically */}
       <div className={cn(
-        "absolute z-30 bg-white/70 backdrop-blur-[1px] rounded-md flex flex-col items-center gap-0.5 p-0.5 w-[55px] overflow-hidden shadow-sm",
+        "absolute z-30 bg-white/95 backdrop-blur-sm rounded-md flex flex-col items-center p-1 border border-stone-200/80 shadow-[0_1px_1px_rgba(0,0,0,0.03)] w-[56px] overflow-hidden",
         settings.qrPosition === 'bottom-right' && "bottom-3.5 right-3.5",
         settings.qrPosition === 'bottom-left' && "bottom-3.5 left-3.5",
         settings.qrPosition === 'top-left' && "top-3.5 left-3.5",
@@ -430,16 +440,18 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
         settings.qrPosition === 'bottom-center' && "bottom-3.5 left-1/2 -translate-x-1/2"
       )}>
         <div className="flex items-center justify-center">
-          <QRCodeSVG value={data.noId} size={51} fgColor="#000000" />
+          <QRCodeSVG value={data.noId || ''} size={48} fgColor="#000000" />
         </div>
-        <div className="w-[51px] select-all overflow-hidden flex items-center justify-between">
-          {Array.from(data.noId || '').map((char, idx) => (
+        <div className={cn(
+          "w-[48px] pt-1 flex-1 flex items-center select-all overflow-hidden leading-none",
+          (data.noId || '').trim().length <= 1 ? "justify-center" : "justify-between"
+        )}>
+          {Array.from((data.noId || '').trim()).map((char, idx) => (
             <span 
               key={idx}
-              className="font-normal text-black font-mono leading-none"
+              className="font-mono font-semibold text-black text-center leading-none"
               style={{ 
-                fontSize: getDynamicIdFontSize(data.noId),
-                fontWeight: 400
+                fontSize: getDynamicIdFontSize(data.noId)
               }}
             >
               {char === ' ' ? '\u00A0' : char}

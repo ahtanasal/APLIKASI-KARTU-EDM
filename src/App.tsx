@@ -164,24 +164,20 @@ export const safeAtob = (str: string): string => {
   }
 };
 
-// Helper to format Pandita Name (Dian Chuan Shi) based on Tao UK systems
+// Helper to format Pandita Name (Dian Chuan Shi) -> [Nama Mandarin] + 點傳師
 const formatPanditaName = (name: string): string => {
   if (!name) return "";
-  const trimmed = name.trim();
+  const cleanName = name.replace(/點傳師|点传师/g, "").replace(/\s+/g, " ").trim();
+  if (!cleanName) return "";
+  return cleanName + "點傳師";
+};
 
-  // Case A: Exactly 3 Chinese characters without spaces (e.g. 張珍球, 許媽源, 林碧蓮)
-  const chineseCharRegex = /^[\u4e00-\u9fa5]{3}$/;
-  if (chineseCharRegex.test(trimmed)) {
-    return trimmed[0] + "點傳師" + trimmed.slice(1);
-  }
-
-  // Case B: 3 words separated by spaces (e.g., "Zhang Zhen Qiu" or "Tan Kim San")
-  const words = trimmed.split(/\s+/).filter(Boolean);
-  if (words.length === 3) {
-    return `${words[0]} 點傳師 ${words[1]} ${words[2]}`;
-  }
-
-  return trimmed;
+// Helper to format Pandita Pinyin -> PANDITA + [Nama Pinyin]
+const formatPanditaPinyin = (pinyin: string): string => {
+  if (!pinyin) return "";
+  const cleanPinyin = pinyin.replace(/\bPANDITA\b/gi, "").replace(/\s+/g, " ").trim();
+  if (!cleanPinyin) return "";
+  return `PANDITA ${cleanPinyin}`.toUpperCase();
 };
 
 // Fallback for crypto.randomUUID
@@ -534,13 +530,12 @@ export default function App() {
         const rawList: { name: string, pinyin: string }[] = snapshot.data().list || [];
         let needsUpdate = false;
         const updatedList = rawList.map(p => {
-          const oldP = p.pinyin || '';
-          const newP = oldP
-            .replace(/lim\s*pi\s*lien/gi, 'LIN BI LIEN')
-            .replace(/zhang\s*cen\s*chiu/gi, 'ZHANG ZHEN QIU')
-            .replace(/xi\s*ma\s*yen/gi, 'XU MA YUAN');
-          if (newP !== oldP) needsUpdate = true;
-          return { ...p, pinyin: newP };
+          const formattedName = formatPanditaName(p.name);
+          const formattedPinyin = formatPanditaPinyin(p.pinyin);
+          if (formattedName !== p.name || formattedPinyin !== p.pinyin) {
+            needsUpdate = true;
+          }
+          return { name: formattedName, pinyin: formattedPinyin };
         });
 
         setMasterPanditas(updatedList);
@@ -553,20 +548,17 @@ export default function App() {
         // Fallback to local storage or defaults, then seed
         const localSaved = localStorage.getItem('edm_master_panditas');
         let initial = [
-          { name: '林點傳師碧蓮', pinyin: 'Pandita LIN BI LIEN' },
-          { name: '張點傳師珍球', pinyin: 'Pandita ZHANG ZHEN QIU' },
-          { name: '許點傳師媽源', pinyin: 'Pandita XU MA YUAN' }
+          { name: '林碧蓮點傳師', pinyin: 'PANDITA LIN BI LIEN' },
+          { name: '張珍球點傳師', pinyin: 'PANDITA ZHANG ZHEN QIU' },
+          { name: '許媽源點傳師', pinyin: 'PANDITA XU MA YUAN' }
         ];
         if (localSaved) {
           try {
             const parsed = JSON.parse(localSaved);
             if (Array.isArray(parsed) && parsed.length > 0) {
               initial = parsed.map((p: any) => ({
-                ...p,
-                pinyin: (p.pinyin || '')
-                  .replace(/lim\s*pi\s*lien/gi, 'LIN BI LIEN')
-                  .replace(/zhang\s*cen\s*chiu/gi, 'ZHANG ZHEN QIU')
-                  .replace(/xi\s*ma\s*yen/gi, 'XU MA YUAN')
+                name: formatPanditaName(p.name),
+                pinyin: formatPanditaPinyin(p.pinyin)
               }));
             }
           } catch (e) {}
@@ -952,7 +944,7 @@ export default function App() {
             vihara: rawVihara,
             viharaPinyin: rawViharaPinyin,
             pandita: formattedPandita,
-            panditaPinyin: rawPanditaPinyin,
+            panditaPinyin: formatPanditaPinyin(rawPanditaPinyin),
             pengajak: String(item['Pengajak'] || ''),
             pengajakPinyin: String(item['Pengajak Pinyin'] || '').trim() || (item['Pengajak'] ? (findPinyinMatch(String(item['Pengajak']).trim()) || '') : ''),
             penanggung: String(item['Penanggung'] || ''),
@@ -1151,7 +1143,7 @@ export default function App() {
           vihara: rawVihara,
           viharaPinyin: rawViharaPinyin,
           pandita: formattedPandita,
-          panditaPinyin: rawPanditaPinyin,
+          panditaPinyin: formatPanditaPinyin(rawPanditaPinyin),
           pengajak: getMappedValue('pengajak'),
           pengajakPinyin: getMappedValue('pengajakPinyin') || (getMappedValue('pengajak') ? (findPinyinMatch(getMappedValue('pengajak')) || '') : ''),
           penanggung: getMappedValue('penanggung'),
@@ -3307,9 +3299,10 @@ function UmatForm({
           acc[key as keyof UmatInput] = trimmed.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').toUpperCase();
         } else if (key === 'pandita') {
           const cleaned = trimmed.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ');
-          acc[key as keyof UmatInput] = formatPanditaName(cleaned).toUpperCase();
+          acc[key as keyof UmatInput] = formatPanditaName(cleaned);
         } else if (key === 'panditaPinyin') {
-          acc[key as keyof UmatInput] = trimmed.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').toUpperCase();
+          const cleaned = trimmed.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ');
+          acc[key as keyof UmatInput] = formatPanditaPinyin(cleaned);
         } else {
           acc[key as keyof UmatInput] = trimmed.toUpperCase();
         }
@@ -3319,12 +3312,10 @@ function UmatForm({
       return acc;
     }, {} as UmatInput);
 
-    // Autofill Pandita Pinyin if found in the system
-    if (!capitalizedData.panditaPinyin && capitalizedData.pandita) {
-      const matchedPinyin = findPinyinMatch(capitalizedData.pandita);
-      if (matchedPinyin) {
-        capitalizedData.panditaPinyin = matchedPinyin.toUpperCase();
-      }
+    // Autofill / format Pandita Pinyin if found in the system
+    if (capitalizedData.pandita) {
+      const p = capitalizedData.panditaPinyin || findPinyinMatch(capitalizedData.pandita);
+      capitalizedData.panditaPinyin = formatPanditaPinyin(p);
     }
 
     setLoading(true);
@@ -3976,7 +3967,8 @@ function MasterDataManager({
     if (!pName) return;
     const cleaned = pName.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
     const formatted = formatPanditaName(cleaned);
-    setPanditas([...panditas, { name: formatted.toUpperCase(), pinyin: (pPinyin || '').toUpperCase() }]);
+    const formattedPinyin = formatPanditaPinyin(pPinyin || '');
+    setPanditas([...panditas, { name: formatted, pinyin: formattedPinyin }]);
     setPName('');
     setPPinyin('');
   };
@@ -3991,8 +3983,9 @@ function MasterDataManager({
     if (!editPName) return;
     const cleaned = editPName.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
     const formatted = formatPanditaName(cleaned);
+    const formattedPinyin = formatPanditaPinyin(editPPinyin || '');
     const newList = [...panditas];
-    newList[index] = { name: formatted.toUpperCase(), pinyin: (editPPinyin || '').toUpperCase() };
+    newList[index] = { name: formatted, pinyin: formattedPinyin };
     setPanditas(newList);
     setEditingPIndex(null);
   };
