@@ -1106,7 +1106,10 @@ export default function App() {
               if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
                 const solarObj = Solar.fromYmd(year, month, day);
                 const lunarObj = solarObj.getLunar();
-                tanggalLunar = `${lunarObj.getYearInGanZhi()}年${lunarObj.getMonthInChinese()}月${lunarObj.getDayInChinese()}`;
+                const numMonths: Record<number, string> = { 1:'一', 2:'二', 3:'三', 4:'四', 5:'五', 6:'六', 7:'七', 8:'八', 9:'九', 10:'十', 11:'十一', 12:'十二' };
+                const rawM = Math.abs(lunarObj.getMonth());
+                const mStr = `${lunarObj.getMonth() < 0 ? '閏' : ''}${numMonths[rawM] || lunarObj.getMonthInChinese()}月`;
+                tanggalLunar = `${lunarObj.getYearInGanZhi()}年${mStr}${lunarObj.getDayInChinese()}`;
               }
             }
           } catch (e) {
@@ -3169,8 +3172,11 @@ function UmatForm({
       
       const solar = Solar.fromYmd(year, month, day);
       const lunar = solar.getLunar();
+      const numMonths: Record<number, string> = { 1:'一', 2:'二', 3:'三', 4:'四', 5:'五', 6:'六', 7:'七', 8:'八', 9:'九', 10:'十', 11:'十一', 12:'十二' };
+      const rawM = Math.abs(lunar.getMonth());
+      const mStr = `${lunar.getMonth() < 0 ? '閏' : ''}${numMonths[rawM] || lunar.getMonthInChinese()}月`;
       
-      let res = `${lunar.getYearInGanZhi()}年${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`;
+      let res = `${lunar.getYearInGanZhi()}年${mStr}${lunar.getDayInChinese()}`;
       
       if (waktu) {
         // Extract Mandarin character from "ZI (子時) (23:00-01:00)"

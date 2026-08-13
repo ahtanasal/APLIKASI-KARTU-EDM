@@ -95,6 +95,28 @@ const formatGregorianDate = (dateStr: string): string => {
   }
 };
 
+const CHINESE_NUMBER_MONTHS: Record<number, string> = {
+  1: '一', 2: '二', 3: '三', 4: '四', 5: '五', 6: '六',
+  7: '七', 8: '八', 9: '九', 10: '十', 11: '十一', 12: '十二'
+};
+
+const formatLunarChineseMonth = (str: string): string => {
+  if (!str) return '';
+  let res = str;
+  res = res.replace(/正月/g, '一月');
+  res = res.replace(/冬月/g, '十一月');
+  res = res.replace(/(腊|臘)月/g, '十二月');
+  
+  const arabicMonthMap: Record<string, string> = {
+    '01': '一', '1': '一', '02': '二', '2': '二', '03': '三', '3': '三',
+    '04': '四', '4': '四', '05': '五', '5': '五', '06': '六', '6': '六',
+    '07': '七', '7': '七', '08': '八', '8': '八', '09': '九', '9': '九',
+    '10': '十', '11': '十一', '12': '十二'
+  };
+
+  return res.replace(/(\d{1,2})月/g, (match, p1) => (arabicMonthMap[p1] || p1) + '月');
+};
+
 const formatLunarNumbers = (str: string): string => {
   if (!str) return '';
   return str.replace(/(?<!\d)\d(?!\d)/g, '0$&');
@@ -102,23 +124,28 @@ const formatLunarNumbers = (str: string): string => {
 
 const getLunarDateFallback = (masehi: string, lunarDate?: string, waktu?: string) => {
   if (lunarDate && /[\u4e00-\u9fa5]/.test(lunarDate)) {
-    return formatLunarNumbers(lunarDate).replace(/时/g, '時');
+    return formatLunarNumbers(formatLunarChineseMonth(lunarDate)).replace(/时/g, '時');
   }
-  if (!masehi) return formatLunarNumbers((lunarDate || '').replace(/时/g, '時'));
+  if (!masehi) return formatLunarNumbers(formatLunarChineseMonth((lunarDate || '').replace(/时/g, '時')));
   try {
     const parts = masehi.split("-");
-    if (parts.length !== 3) return formatLunarNumbers((lunarDate || '').replace(/时/g, '時'));
+    if (parts.length !== 3) return formatLunarNumbers(formatLunarChineseMonth((lunarDate || '').replace(/时/g, '時')));
     
     const day = parseInt(parts[0], 10);
     const month = parseInt(parts[1], 10);
     const year = parseInt(parts[2], 10);
     
-    if (isNaN(day) || isNaN(month) || isNaN(year)) return formatLunarNumbers((lunarDate || '').replace(/时/g, '時'));
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return formatLunarNumbers(formatLunarChineseMonth((lunarDate || '').replace(/时/g, '時')));
     
     const solar = Solar.fromYmd(year, month, day);
     const lunar = solar.getLunar();
     
-    let res = `${lunar.getYearInGanZhi()}年${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`;
+    const rawMonth = Math.abs(lunar.getMonth());
+    const isLeap = lunar.getMonth() < 0;
+    const chineseMonthNum = CHINESE_NUMBER_MONTHS[rawMonth] || lunar.getMonthInChinese();
+    const monthStr = `${isLeap ? '閏' : ''}${chineseMonthNum}月`;
+
+    let res = `${lunar.getYearInGanZhi()}年${monthStr}${lunar.getDayInChinese()}`;
     
     if (waktu) {
       const match = waktu.match(/\((.*?)\)/);
@@ -128,10 +155,10 @@ const getLunarDateFallback = (masehi: string, lunarDate?: string, waktu?: string
         res += ` ${waktu.trim()}`;
       }
     }
-    return formatLunarNumbers(res.replace(/时/g, '時'));
+    return formatLunarNumbers(formatLunarChineseMonth(res.replace(/时/g, '時')));
   } catch (e) {
     console.error("Lunar conversion error in IdCard:", e);
-    return formatLunarNumbers((lunarDate || '').replace(/时/g, '時'));
+    return formatLunarNumbers(formatLunarChineseMonth((lunarDate || '').replace(/时/g, '時')));
   }
 };
 
@@ -154,7 +181,7 @@ const getPinyinFallback = (mandarinText: string, currentPinyin: string | undefin
   return (currentPinyin || '').trim().toUpperCase();
 };
 
-const getFittedFontSize = (text: string, baseFontSize: number, maxSpaceWidth: number = 116, minFontSize: number = 3.8): { fontSize: string, letterSpacing: string } => {
+const getFittedFontSize = (text: string, baseFontSize: number, maxSpaceWidth: number = 112, minFontSize: number = 3.8): { fontSize: string, letterSpacing: string } => {
   if (!text) return { fontSize: `${baseFontSize}px`, letterSpacing: 'normal' };
 
   let effectiveLen = 0;
@@ -165,11 +192,11 @@ const getFittedFontSize = (text: string, baseFontSize: number, maxSpaceWidth: nu
     } else if (/[I1i-]/.test(char)) {
       effectiveLen += 0.32; // Narrow characters like I, 1, i
     } else if (/[A-Z]/.test(char)) {
-      effectiveLen += 0.60; // Uppercase Latin letter ~ 0.60em
+      effectiveLen += 0.68; // Uppercase Latin letter ~ 0.68em
     } else if (/[a-z0-9]/.test(char)) {
-      effectiveLen += 0.50; // Lowercase & digits ~ 0.50em
+      effectiveLen += 0.52; // Lowercase & digits ~ 0.52em
     } else {
-      effectiveLen += 0.25; // Spaces, hyphens, punctuation ~ 0.25em
+      effectiveLen += 0.28; // Spaces, hyphens, punctuation ~ 0.28em
     }
   }
 
@@ -187,15 +214,15 @@ const getFittedFontSize = (text: string, baseFontSize: number, maxSpaceWidth: nu
   let letterSpacing = 'normal';
   let calculatedSize = maxSpaceWidth / effectiveLen;
 
-  if (effectiveLen > 20) {
+  if (effectiveLen > 18) {
     letterSpacing = '-0.035em';
-    calculatedSize = maxSpaceWidth / (effectiveLen * 0.92);
-  } else if (effectiveLen > 14) {
+    calculatedSize = (maxSpaceWidth * 0.94) / effectiveLen;
+  } else if (effectiveLen > 13) {
     letterSpacing = '-0.025em';
-    calculatedSize = maxSpaceWidth / (effectiveLen * 0.94);
-  } else if (effectiveLen > 9) {
+    calculatedSize = (maxSpaceWidth * 0.96) / effectiveLen;
+  } else if (effectiveLen > 8) {
     letterSpacing = '-0.015em';
-    calculatedSize = maxSpaceWidth / (effectiveLen * 0.96);
+    calculatedSize = (maxSpaceWidth * 0.97) / effectiveLen;
   }
 
   const finalSize = Math.max(minFontSize, Math.min(baseFontSize, calculatedSize));
@@ -703,7 +730,7 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
   }
 
   // Max safe width (px) inside Value box before text needs scaling down
-  const maxSpaceWidth = forceSmall ? 116 : 124;
+  const maxSpaceWidth = forceSmall ? 110 : 118;
 
   const valueFitting = getFittedFontSize(value, baseValueSize, maxSpaceWidth, 3.8);
   const dynamicValueFontSize = valueFitting.fontSize;
