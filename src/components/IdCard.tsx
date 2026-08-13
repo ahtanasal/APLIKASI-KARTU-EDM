@@ -162,12 +162,14 @@ const getFittedFontSize = (text: string, baseFontSize: number, maxSpaceWidth: nu
     const char = text[i];
     if (/[\u4e00-\u9fa5]/.test(char)) {
       effectiveLen += 1.00; // Chinese character ~ 1.0em
+    } else if (/[I1i-]/.test(char)) {
+      effectiveLen += 0.32; // Narrow characters like I, 1, i
     } else if (/[A-Z]/.test(char)) {
-      effectiveLen += 0.68; // Uppercase Latin letter ~ 0.68em (prevents uppercase text like PANDITA from overflowing)
+      effectiveLen += 0.60; // Uppercase Latin letter ~ 0.60em
     } else if (/[a-z0-9]/.test(char)) {
-      effectiveLen += 0.52; // Lowercase & digits ~ 0.52em
+      effectiveLen += 0.50; // Lowercase & digits ~ 0.50em
     } else {
-      effectiveLen += 0.30; // Spaces, hyphens, punctuation ~ 0.30em
+      effectiveLen += 0.25; // Spaces, hyphens, punctuation ~ 0.25em
     }
   }
 
@@ -187,12 +189,13 @@ const getFittedFontSize = (text: string, baseFontSize: number, maxSpaceWidth: nu
 
   if (effectiveLen > 20) {
     letterSpacing = '-0.035em';
-    calculatedSize = maxSpaceWidth / (effectiveLen * 0.93);
+    calculatedSize = maxSpaceWidth / (effectiveLen * 0.92);
   } else if (effectiveLen > 14) {
     letterSpacing = '-0.025em';
-    calculatedSize = maxSpaceWidth / (effectiveLen * 0.95);
+    calculatedSize = maxSpaceWidth / (effectiveLen * 0.94);
   } else if (effectiveLen > 9) {
     letterSpacing = '-0.015em';
+    calculatedSize = maxSpaceWidth / (effectiveLen * 0.96);
   }
 
   const finalSize = Math.max(minFontSize, Math.min(baseFontSize, calculatedSize));
@@ -313,6 +316,7 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
           return (
             <TraditionalRow 
               key={fieldId}
+              fieldId={fieldId}
               label={fieldLabel} 
               chLabel={fieldChLabel} 
               value={value}
@@ -664,6 +668,7 @@ interface TraditionalRowProps {
   chLabel: string; 
   value: string; 
   subValue?: string;
+  fieldId?: string;
   isLast?: boolean;
   isCentered?: boolean;
   isLarge?: boolean;
@@ -673,7 +678,7 @@ interface TraditionalRowProps {
 }
 
 const TraditionalRow: React.FC<TraditionalRowProps> = ({ 
-  label, chLabel, value, subValue, isLast = false, isCentered = false, isLarge = false, isMasehi = false, forceSmall = false, isSingleLineOnly = true 
+  label, chLabel, value, subValue, fieldId, isLast = false, isCentered = false, isLarge = false, isMasehi = false, forceSmall = false, isSingleLineOnly = true 
 }) => {
   const valLen = value ? value.length : 0;
   const subValLen = subValue ? subValue.length : 0;
@@ -681,12 +686,16 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
   const hasChineseValue = value ? /[\u4e00-\u9fa5]/.test(value) : false;
   const hasChineseSubValue = subValue ? /[\u4e00-\u9fa5]/.test(subValue) : false;
 
+  const isPandita = fieldId === 'pandita';
+
   // Dynamic font sizing: keep standard/large size when text fits, scale down ONLY when text exceeds available space (132px)
   let baseValueSize = 16.5;
   if (isMasehi) {
     baseValueSize = forceSmall ? 14.5 : 15.5;
   } else if (hasChineseValue) {
-    baseValueSize = forceSmall ? 18.0 : 19.5;
+    baseValueSize = isPandita 
+      ? (forceSmall ? 20.0 : 21.5)
+      : (forceSmall ? 18.0 : 19.5);
   } else if (isSingleLineOnly || isLarge) {
     baseValueSize = forceSmall ? 17.5 : 18.5;
   } else {
@@ -701,7 +710,10 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
   const dynamicValueLetterSpacing = valueFitting.letterSpacing;
 
   // Dynamic font sizing for subValue
-  let baseSubValueSize = forceSmall ? 12.0 : 13.0;
+  let baseSubValueSize = isPandita 
+    ? (forceSmall ? 13.8 : 14.8)
+    : (forceSmall ? 12.0 : 13.0);
+    
   if (hasChineseSubValue) {
     baseSubValueSize = forceSmall ? 13.5 : 14.5;
   }
@@ -722,17 +734,17 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
       )}>
         {chLabel && (
           <span 
-            className={cn("font-dfkai font-bold text-rose-950 leading-none mb-0.5", forceSmall ? "text-[12.5px]" : "text-[14.5px]")}
+            className={cn("font-dfkai text-rose-950 leading-none mb-0.5 font-normal", forceSmall ? "text-[14.5px]" : "text-[16.5px]")}
           >
             {chLabel}
           </span>
         )}
         <span 
-          className="font-black text-rose-950 leading-none whitespace-nowrap" // Avoid semi-transparent text colors for small labels to ensure sharp vector printing (halftone prevention)
+          className="font-normal text-rose-950 leading-none whitespace-nowrap" 
           style={{
             fontSize: label.length > 11
-              ? (forceSmall ? '6.8px' : '7.8px')
-              : (forceSmall ? '7.8px' : '8.8px'),
+              ? (forceSmall ? '8.2px' : '9.2px')
+              : (forceSmall ? '9.2px' : '10.2px'),
             letterSpacing: label.length > 8 ? '-0.03em' : '-0.01em'
           }}
         >
