@@ -319,22 +319,26 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
         </div>
         {/* Text container aligned with Value column (70%) */}
         <div className="flex-1 flex items-center justify-center h-full pl-1 pr-2">
-          <div className="w-full flex items-center justify-between">
-            <div className="flex flex-col items-center justify-center">
-              <span className="font-dfkai text-rose-950 text-[24px] leading-none font-normal">發</span>
-              <span className="font-sans font-medium text-rose-900 text-[11.4px] leading-none uppercase mt-0.5 tracking-tight">FA</span>
+          <div className="w-full flex items-center justify-around">
+            <div className="flex items-center gap-2.5">
+              <div className="flex flex-col items-center justify-center">
+                <span className="font-dfkai text-rose-950 text-[24px] leading-none font-normal">發</span>
+                <span className="font-sans font-medium text-rose-900 text-[11.4px] leading-none uppercase mt-0.5 tracking-tight">FA</span>
+              </div>
+              <div className="flex flex-col items-center justify-center">
+                <span className="font-dfkai text-rose-950 text-[24px] leading-none font-normal">一</span>
+                <span className="font-sans font-medium text-rose-900 text-[11.4px] leading-none uppercase mt-0.5 tracking-tight">YI</span>
+              </div>
             </div>
-            <div className="flex flex-col items-center justify-center">
-              <span className="font-dfkai text-rose-950 text-[24px] leading-none font-normal">一</span>
-              <span className="font-sans font-medium text-rose-900 text-[11.4px] leading-none uppercase mt-0.5 tracking-tight">YI</span>
-            </div>
-            <div className="flex flex-col items-center justify-center">
-              <span className="font-dfkai text-rose-950 text-[24px] leading-none font-normal">崇</span>
-              <span className="font-sans font-medium text-rose-900 text-[11.4px] leading-none uppercase mt-0.5 tracking-tighter">CHONG</span>
-            </div>
-            <div className="flex flex-col items-center justify-center">
-              <span className="font-dfkai text-rose-950 text-[24px] leading-none font-normal">德</span>
-              <span className="font-sans font-medium text-rose-900 text-[11.4px] leading-none uppercase mt-0.5 tracking-tight">DE</span>
+            <div className="flex items-center gap-2.5">
+              <div className="flex flex-col items-center justify-center">
+                <span className="font-dfkai text-rose-950 text-[24px] leading-none font-normal">崇</span>
+                <span className="font-sans font-medium text-rose-900 text-[11.4px] leading-none uppercase mt-0.5 tracking-tighter">CHONG</span>
+              </div>
+              <div className="flex flex-col items-center justify-center">
+                <span className="font-dfkai text-rose-950 text-[24px] leading-none font-normal">德</span>
+                <span className="font-sans font-medium text-rose-900 text-[11.4px] leading-none uppercase mt-0.5 tracking-tight">DE</span>
+              </div>
             </div>
           </div>
         </div>

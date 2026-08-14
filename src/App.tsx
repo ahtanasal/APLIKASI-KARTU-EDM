@@ -45,20 +45,21 @@ import {
 } from 'lucide-react';
 
 const TARGET_FIELDS = [
-  { key: 'noId' as const, label: 'No. ID / Register', description: 'Nomor ID Anggota / Registrasi', required: true },
-  { key: 'nama' as const, label: 'NAMA PEMOHON TAO', description: 'Nama huruf Mandarin / 求道人', required: true },
+  { key: 'noId' as const, label: 'No. ID / Register', description: 'Nomor ID Anggota / Registrasi (道親編號)', required: true },
+  { key: 'nama' as const, label: 'NAMA PEMOHON TAO', description: 'Nama huruf Mandarin / 姓名 / 求道人', required: true },
   { key: 'namaIndonesia' as const, label: 'Nama Indonesia', description: 'Nama Lengkap / Nama Indonesia' },
   { key: 'namaPinyin' as const, label: 'Nama Pinyin', description: 'Pinyin / Ejaan nama Mandarin' },
   { key: 'jabatanSuci' as const, label: 'Jabatan Suci', description: 'Jabatan suci / 天職 (Umat, Tan Cu, dll)' },
-  { key: 'vihara' as const, label: 'Vihara', description: 'Nama Vihara / 壇名' },
+  { key: 'vihara' as const, label: 'Vihara', description: 'Nama Vihara / 求道地點 / 壇名' },
   { key: 'viharaPinyin' as const, label: 'Vihara Pinyin', description: 'Ejaan Pinyin Vihara' },
-  { key: 'pandita' as const, label: 'Pandita', description: 'Nama Pandita / 點傳師' },
+  { key: 'pandita' as const, label: 'Pandita', description: 'Nama Pandita / 傳道師 / 點傳師' },
   { key: 'panditaPinyin' as const, label: 'Pandita Pinyin', description: 'Pinyin Pandita' },
   { key: 'pengajak' as const, label: 'Pengajak', description: 'Nama Pengajak / 引師' },
   { key: 'pengajakPinyin' as const, label: 'Pengajak Pinyin', description: 'Pinyin Pengajak' },
   { key: 'penanggung' as const, label: 'Penanggung', description: 'Nama Penanggung / 保師' },
   { key: 'penanggungPinyin' as const, label: 'Penanggung Pinyin', description: 'Pinyin Penanggung' },
-  { key: 'tanggalMasehi' as const, label: 'Tanggal Masehi', description: 'Tanggal mohon ketuhanan (Masehi)' },
+  { key: 'tanggalMasehi' as const, label: 'Tanggal Masehi', description: 'Tanggal mohon ketuhanan / 求道日期 (Masehi)' },
+  { key: 'waktu' as const, label: 'Waktu Memohon TAO', description: 'Waktu / Jam / Shi Chen (求道時間/時辰)' },
   { key: 'tanggalLunar' as const, label: 'Tanggal Lunar', description: 'Tanggal Lunar / Imlek (Akan dikonversi otomatis jika kosong)' },
   { key: 'phone' as const, label: 'No. HP / WhatsApp', description: 'Contact Info / WhatsApp' },
 ];
@@ -178,6 +179,41 @@ const formatPanditaPinyin = (pinyin: string): string => {
   const cleanPinyin = pinyin.replace(/\bPANDITA\b/gi, "").replace(/\s+/g, " ").trim();
   if (!cleanPinyin) return "";
   return `PANDITA ${cleanPinyin}`.toUpperCase();
+};
+
+export const calculateLunarDate = (masehi: string, waktu?: string) => {
+  if (!masehi) return "";
+  try {
+    const parts = masehi.split("-");
+    if (parts.length !== 3) return "";
+    
+    const day = parseInt(parts[0]);
+    const month = parseInt(parts[1]);
+    const year = parseInt(parts[2]);
+    
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return "";
+    
+    const solar = Solar.fromYmd(year, month, day);
+    const lunar = solar.getLunar();
+    const numMonths: Record<number, string> = { 1:'一', 2:'二', 3:'三', 4:'四', 5:'五', 6:'六', 7:'七', 8:'八', 9:'九', 10:'十', 11:'十一', 12:'十二' };
+    const rawM = Math.abs(lunar.getMonth());
+    const mStr = `${lunar.getMonth() < 0 ? '閏' : ''}${numMonths[rawM] || lunar.getMonthInChinese()}月`;
+    
+    let res = `${lunar.getYearInGanZhi()}年${mStr}${lunar.getDayInChinese()}`;
+    
+    if (waktu) {
+      // Extract Mandarin character from "ZI (子時) (23:00-01:00)"
+      const match = waktu.match(/\((.*?)\)/);
+      if (match && match[1]) {
+        res += ` ${match[1]}`;
+      }
+    }
+    
+    return res.replace(/时/g, '時');
+  } catch (e) {
+    console.error("Lunar conversion error:", e);
+    return "";
+  }
 };
 
 // Fallback for crypto.randomUUID
@@ -870,6 +906,7 @@ export default function App() {
       'Penanggung': 'Nama Penanggung',
       'Penanggung Pinyin': '',
       'Tanggal Masehi': '01-01-2024',
+      'Waktu Mohon Tao': 'ZI (子時) (23:00-01:00)',
       'Tanggal Lunar': '15 LUNAR MONTH',
       'WhatsApp': '08123456789'
     }];
@@ -901,6 +938,7 @@ export default function App() {
       'Penanggung': u.penanggung,
       'Penanggung Pinyin': u.penanggungPinyin || '',
       'Tanggal Masehi': u.tanggalMasehi,
+      'Waktu Mohon Tao': u.waktu || '',
       'Tanggal Lunar': u.tanggalLunar,
       'WhatsApp': u.phone || ''
     }));
@@ -925,7 +963,7 @@ export default function App() {
         const data = XLSX.utils.sheet_to_json(worksheet) as any[];
 
         const importedUmats: Umat[] = data.map(item => {
-          const rawVihara = String(item['Vihara'] || '').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+          const rawVihara = String(item['Vihara'] || item['求道地點'] || '').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
           let rawViharaPinyin = String(item['Vihara Pinyin'] || '').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
           if (!rawViharaPinyin && rawVihara) {
             const matchedViharaPinyin = findPinyinMatch(rawVihara);
@@ -933,7 +971,7 @@ export default function App() {
               rawViharaPinyin = matchedViharaPinyin;
             }
           }
-          const rawPandita = String(item['Pandita'] || '').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+          const rawPandita = String(item['Pandita'] || item['傳道師'] || item['點傳師'] || '').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
           const formattedPandita = formatPanditaName(rawPandita);
           
           let rawPanditaPinyin = String(item['Pandita Pinyin'] || '').trim();
@@ -944,27 +982,50 @@ export default function App() {
             }
           }
 
+          let rawWaktu = String(item['Waktu Mohon Tao'] || item['Waktu Memohon TAO'] || item['Waktu'] || item['求道時間'] || item['時辰'] || '').trim();
+          if (rawWaktu) {
+            const matchedShiChen = SHI_CHEN.find(sc => 
+              sc.value.toLowerCase() === rawWaktu.toLowerCase() || 
+              sc.label.toLowerCase().includes(rawWaktu.toLowerCase()) ||
+              sc.value.toLowerCase().includes(rawWaktu.toLowerCase()) ||
+              (rawWaktu.length === 1 && sc.value.includes(rawWaktu))
+            );
+            if (matchedShiChen) {
+              rawWaktu = matchedShiChen.value;
+            }
+          }
+
+          const tglMasehi = String(item['Tanggal Masehi'] || item['求道日期'] || format(new Date(), 'dd-MM-yyyy'));
+          let tglLunar = String(item['Tanggal Lunar'] || item['農曆'] || item['农历'] || '');
+          if (!tglLunar && tglMasehi) {
+            tglLunar = calculateLunarDate(tglMasehi, rawWaktu);
+          }
+
+          const rawNama = String(item['Nama'] || item['姓名'] || item['求道人'] || item['Nama Indonesia'] || '');
+          const rawNamaIndo = String(item['Nama Indonesia'] || item['Nama'] || item['姓名'] || item['求道人'] || '');
+
           return {
             id: generateId(),
-            noId: String(item['No ID'] || ''),
-            nama: String(item['Nama'] || ''),
-            namaPinyin: String(item['Nama Pinyin'] || '').trim() || (item['Nama'] ? (findPinyinMatch(String(item['Nama']).trim()) || '') : ''),
-            namaIndonesia: String(item['Nama Indonesia'] || ''),
-            jabatanSuci: String(item['Jabatan'] || ''),
+            noId: String(item['No ID'] || item['道親編號'] || ''),
+            nama: rawNama,
+            namaPinyin: String(item['Nama Pinyin'] || '').trim() || (rawNama ? (findPinyinMatch(rawNama.trim()) || '') : ''),
+            namaIndonesia: rawNamaIndo,
+            jabatanSuci: String(item['Jabatan'] || item['天職'] || '道親 - Umat'),
             vihara: rawVihara,
             viharaPinyin: rawViharaPinyin,
             pandita: formattedPandita,
             panditaPinyin: formatPanditaPinyin(rawPanditaPinyin),
-            pengajak: String(item['Pengajak'] || ''),
-            pengajakPinyin: String(item['Pengajak Pinyin'] || '').trim() || (item['Pengajak'] ? (findPinyinMatch(String(item['Pengajak']).trim()) || '') : ''),
-            penanggung: String(item['Penanggung'] || ''),
-            penanggungPinyin: String(item['Penanggung Pinyin'] || '').trim() || (item['Penanggung'] ? (findPinyinMatch(String(item['Penanggung']).trim()) || '') : ''),
-            tanggalMasehi: String(item['Tanggal Masehi'] || format(new Date(), 'dd-MM-yyyy')),
-            tanggalLunar: String(item['Tanggal Lunar'] || ''),
-            phone: String(item['WhatsApp'] || ''),
+            pengajak: String(item['Pengajak'] || item['引師'] || ''),
+            pengajakPinyin: String(item['Pengajak Pinyin'] || '').trim() || (item['Pengajak'] || item['引師'] ? (findPinyinMatch(String(item['Pengajak'] || item['引師']).trim()) || '') : ''),
+            penanggung: String(item['Penanggung'] || item['保師'] || ''),
+            penanggungPinyin: String(item['Penanggung Pinyin'] || '').trim() || (item['Penanggung'] || item['保師'] ? (findPinyinMatch(String(item['Penanggung'] || item['保師']).trim()) || '') : ''),
+            tanggalMasehi: tglMasehi,
+            tanggalLunar: tglLunar,
+            waktu: rawWaktu,
+            phone: String(item['WhatsApp'] || item['No HP'] || item['電話'] || ''),
             createdAt: new Date().toISOString(),
           };
-        }).filter(u => u.nama && u.noId);
+        }).filter(u => u.nama || u.namaIndonesia);
 
         if (importedUmats.length === 0) {
           alert('Tidak ada data valid yang ditemukan');
@@ -1009,21 +1070,22 @@ export default function App() {
         
         // Auto-detect columns based on predefined keywords
         const keywords: Record<string, string[]> = {
-          noId: ['no id', 'id', 'no. id', 'id umat', 'no_id', 'id_umat', 'id_tao', 'no urut', 'no.', 'no_urut', 'nomor', 'no_kartu'],
-          nama: ['nama pemohon', 'nama pemohon tao', 'pemohon tao', 'pemohon', 'nama', '求道人', 'name', 'nama mandarin', 'nama_mandarin', 'chinese name', 'hanzi'],
+          noId: ['道親編號', 'no id', 'id', 'no. id', 'id umat', 'no_id', 'id_umat', 'id_tao', 'no urut', 'no.', 'no_urut', 'nomor', 'no_kartu', 'registrasi', '編號'],
+          nama: ['姓名', 'nama pemohon', 'nama pemohon tao', 'pemohon tao', 'pemohon', 'nama', '求道人', 'name', 'nama mandarin', 'nama_mandarin', 'chinese name', 'hanzi'],
           namaIndonesia: ['nama indonesia', 'nama lengkap', 'nama indo', 'indonesia', 'nama_indonesia', 'nama_lengkap', 'full name', 'fullname'],
           namaPinyin: ['pinyin', 'nama pinyin', 'pinyin nama', 'nama_pinyin', 'pinyin_nama', 'ejaan', 'pinyin name'],
-          pandita: ['pandita', '點傳師', 'dian chuan shi', 'dianchuan', 'pdt', 'danchuanshi', 'dianchuanshi'],
+          pandita: ['傳道師', 'pandita', '點傳師', 'dian chuan shi', 'dianchuan', 'pdt', 'danchuanshi', 'dianchuanshi', '傳道'],
           panditaPinyin: ['pandita pinyin', 'pdt pinyin', 'pinyin pandita', 'panditapinyin'],
-          pengajak: ['pengajak', '引師', 'yin shi', 'yinshi', 'pengajak_nama'],
+          pengajak: ['引師', 'pengajak', 'yin shi', 'yinshi', 'pengajak_nama'],
           pengajakPinyin: ['pengajak pinyin', 'pinyin pengajak', 'pengajakpinyin'],
-          penanggung: ['penanggung', '保師', 'bao shi', 'baoshi', 'penanggung_nama', 'penjamin'],
+          penanggung: ['保師', 'penanggung', 'bao shi', 'baoshi', 'penanggung_nama', 'penjamin'],
           penanggungPinyin: ['penanggung pinyin', 'pinyin penanggung', 'penanggungpinyin'],
-          vihara: ['vihara', '壇名', 'nama vihara', 'nama_vihara', 'vihara_nama', 'clique', 'temple'],
+          vihara: ['求道地點', 'vihara', '壇名', 'nama vihara', 'nama_vihara', 'vihara_nama', 'clique', 'temple', '求道地', '地點'],
           viharaPinyin: ['vihara pinyin', 'pinyin vihara', 'viharapinyin'],
-          tanggalMasehi: ['tanggal', 'tanggal masehi', 'tgl', 'date', 'masehi', 'tgl masehi', '求道日期', 'tanggal_masehi', 'tanggal_mohon'],
-          tanggalLunar: ['lunar', 'imlek', '农历', 'yinli', 'tanggal lunar', 'tgl imlek', 'tanggal_lunar', 'lunar_date'],
-          phone: ['phone', 'whatsapp', 'wa', 'no hp', 'no. hp', 'hp', 'telp', 'telepon', 'mobile'],
+          tanggalMasehi: ['求道日期', 'tanggal', 'tanggal masehi', 'tgl', 'date', 'masehi', 'tgl masehi', 'tanggal_masehi', 'tanggal_mohon', '日期'],
+          waktu: ['求道時間', '求道時辰', '時辰', '時間', 'waktu', 'jam', 'waktu mohon tao', 'jam mohon tao', 'waktu_mohon_tao', 'waktu_mohon', 'jam_mohon', 'time', 'shi chen', 'shichen', 'waktu memohon tao'],
+          tanggalLunar: ['lunar', 'imlek', '农历', '農曆', 'yinli', 'tanggal lunar', 'tgl imlek', 'tanggal_lunar', 'lunar_date'],
+          phone: ['phone', 'whatsapp', 'wa', 'no hp', 'no. hp', 'hp', 'telp', 'telepon', 'mobile', '電話', '手機'],
           jabatanSuci: ['jabatan', 'jabatan suci', '天職', 'jabatan_suci', 'role', 'status']
         };
 
@@ -1113,26 +1175,22 @@ export default function App() {
           }
         }
 
+        let rawWaktu = getMappedValue('waktu').trim();
+        if (rawWaktu) {
+          const matchedShiChen = SHI_CHEN.find(sc => 
+            sc.value.toLowerCase() === rawWaktu.toLowerCase() || 
+            sc.label.toLowerCase().includes(rawWaktu.toLowerCase()) ||
+            sc.value.toLowerCase().includes(rawWaktu.toLowerCase()) ||
+            (rawWaktu.length === 1 && sc.value.includes(rawWaktu))
+          );
+          if (matchedShiChen) {
+            rawWaktu = matchedShiChen.value;
+          }
+        }
+
         let tanggalLunar = getMappedValue('tanggalLunar');
         if (!tanggalLunar && tanggalMasehi) {
-          try {
-            const parts = tanggalMasehi.split('-');
-            if (parts.length === 3) {
-              const day = parseInt(parts[0], 10);
-              const month = parseInt(parts[1], 10);
-              const year = parseInt(parts[2], 10);
-              if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-                const solarObj = Solar.fromYmd(year, month, day);
-                const lunarObj = solarObj.getLunar();
-                const numMonths: Record<number, string> = { 1:'一', 2:'二', 3:'三', 4:'四', 5:'五', 6:'六', 7:'七', 8:'八', 9:'九', 10:'十', 11:'十一', 12:'十二' };
-                const rawM = Math.abs(lunarObj.getMonth());
-                const mStr = `${lunarObj.getMonth() < 0 ? '閏' : ''}${numMonths[rawM] || lunarObj.getMonthInChinese()}月`;
-                tanggalLunar = `${lunarObj.getYearInGanZhi()}年${mStr}${lunarObj.getDayInChinese()}`;
-              }
-            }
-          } catch (e) {
-            console.error('Lunar conversion failed', e);
-          }
+          tanggalLunar = calculateLunarDate(tanggalMasehi, rawWaktu);
         }
 
         const rawVihara = (getMappedValue('vihara') || '').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -1171,6 +1229,7 @@ export default function App() {
           penanggungPinyin: getMappedValue('penanggungPinyin') || (getMappedValue('penanggung') ? (findPinyinMatch(getMappedValue('penanggung')) || '') : ''),
           tanggalMasehi,
           tanggalLunar: tanggalLunar || '',
+          waktu: rawWaktu,
           phone: getMappedValue('phone'),
           createdAt: new Date().toISOString(),
         };
@@ -3174,41 +3233,6 @@ function UmatForm({
     }
 
     return null;
-  };
-
-  const calculateLunarDate = (masehi: string, waktu?: string) => {
-    if (!masehi) return "";
-    try {
-      const parts = masehi.split("-");
-      if (parts.length !== 3) return "";
-      
-      const day = parseInt(parts[0]);
-      const month = parseInt(parts[1]);
-      const year = parseInt(parts[2]);
-      
-      if (isNaN(day) || isNaN(month) || isNaN(year)) return "";
-      
-      const solar = Solar.fromYmd(year, month, day);
-      const lunar = solar.getLunar();
-      const numMonths: Record<number, string> = { 1:'一', 2:'二', 3:'三', 4:'四', 5:'五', 6:'六', 7:'七', 8:'八', 9:'九', 10:'十', 11:'十一', 12:'十二' };
-      const rawM = Math.abs(lunar.getMonth());
-      const mStr = `${lunar.getMonth() < 0 ? '閏' : ''}${numMonths[rawM] || lunar.getMonthInChinese()}月`;
-      
-      let res = `${lunar.getYearInGanZhi()}年${mStr}${lunar.getDayInChinese()}`;
-      
-      if (waktu) {
-        // Extract Mandarin character from "ZI (子時) (23:00-01:00)"
-        const match = waktu.match(/\((.*?)\)/);
-        if (match && match[1]) {
-          res += ` ${match[1]}`;
-        }
-      }
-      
-      return res.replace(/时/g, '時');
-    } catch (e) {
-      console.error("Lunar conversion error:", e);
-      return "";
-    }
   };
 
   const [loading, setLoading] = useState(false);
