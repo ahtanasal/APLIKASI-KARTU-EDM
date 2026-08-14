@@ -180,10 +180,11 @@ const formatPanditaPinyin = (pinyin: string): string => {
   let cleanPinyin = pinyin.replace(/\bPANDITA\b/gi, "").replace(/\s+/g, " ").trim();
   if (!cleanPinyin) return "";
   cleanPinyin = cleanPinyin
-    .replace(/lim\s*pi\s*lien/gi, 'LIN BIN LIAN')
-    .replace(/lin\s*bi\s*lien/gi, 'LIN BIN LIAN')
-    .replace(/lin\s*bin\s*lien/gi, 'LIN BIN LIAN')
-    .replace(/lin\s*bi\s*lian/gi, 'LIN BIN LIAN')
+    .replace(/lim\s*pi\s*lien/gi, 'LIN BI LIAN')
+    .replace(/lin\s*bi\s*lien/gi, 'LIN BI LIAN')
+    .replace(/lin\s*bin\s*lien/gi, 'LIN BI LIAN')
+    .replace(/lin\s*bin\s*lian/gi, 'LIN BI LIAN')
+    .replace(/lin\s*bi\s*lian/gi, 'LIN BI LIAN')
     .replace(/zhang\s*cen\s*chiu/gi, 'ZHANG ZHEN QIU')
     .replace(/xi\s*ma\s*yen/gi, 'XU MA YUAN');
   return `PANDITA ${cleanPinyin}`.toUpperCase();
@@ -429,7 +430,7 @@ export default function App() {
               if (item.panditaPinyin) {
                 item.panditaPinyin = formatPanditaPinyin(item.panditaPinyin);
               } else if (item.pandita && /碧蓮|林.*碧蓮/.test(item.pandita)) {
-                item.panditaPinyin = 'PANDITA LIN BIN LIAN';
+                item.panditaPinyin = 'PANDITA LIN BI LIAN';
               }
               return item;
             });
@@ -461,7 +462,7 @@ export default function App() {
     const loadLocalPanditasFallback = () => {
       const localSaved = localStorage.getItem('edm_master_panditas');
       let initial = [
-        { name: '林碧蓮點傳師', pinyin: 'PANDITA LIN BIN LIAN' },
+        { name: '林碧蓮點傳師', pinyin: 'PANDITA LIN BI LIAN' },
         { name: '張珍球點傳師', pinyin: 'PANDITA ZHANG ZHEN QIU' },
         { name: '許媽源點傳師', pinyin: 'PANDITA XU MA YUAN' }
       ];
@@ -492,7 +493,7 @@ export default function App() {
             needsUpdate = true;
           }
         } else if (item.pandita && /碧蓮|林.*碧蓮/.test(item.pandita)) {
-          item.panditaPinyin = 'PANDITA LIN BIN LIAN';
+          item.panditaPinyin = 'PANDITA LIN BI LIAN';
           needsUpdate = true;
         }
         if (needsUpdate) {
@@ -607,7 +608,7 @@ export default function App() {
         // Fallback to local storage or defaults, then seed
         const localSaved = localStorage.getItem('edm_master_panditas');
         let initial = [
-          { name: '林碧蓮點傳師', pinyin: 'PANDITA LIN BIN LIAN' },
+          { name: '林碧蓮點傳師', pinyin: 'PANDITA LIN BI LIAN' },
           { name: '張珍球點傳師', pinyin: 'PANDITA ZHANG ZHEN QIU' },
           { name: '許媽源點傳師', pinyin: 'PANDITA XU MA YUAN' }
         ];
@@ -2440,7 +2441,7 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
                 <span>
-                  <strong>Tips Cetak Presisi 85.6 mm x 54 mm (Standard CR80):</strong> Skala telah diset ke <strong>100% (Presisi)</strong> dan ukuran kertas default <strong>200 x 300 mm</strong>. Pada dialog cetak browser (Ctrl+P / Cmd+P), pastikan atur <strong>Margin: "None" (Tanpa Margin)</strong> dan <strong>Scale: 100% / Default</strong>.
+                  <strong>Tips Cetak Kartu (105% - 89.9 mm x 56.7 mm):</strong> Ukuran kartu telah disesuaikan ke 105% dengan garis bingkai potong yang dipertebal. Pada dialog cetak browser (Ctrl+P / Cmd+P), atur <strong>Margin: "None" (Tanpa Margin)</strong> dan <strong>Scale: 100% / Default</strong>.
                 </span>
               </div>
               <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded whitespace-nowrap shrink-0">
@@ -2578,8 +2579,8 @@ function PrintingView({
   };
 
   // Safe vertical gap math ensuring top/bottom pageMargin are strictly respected
-  // Total page height = pHeight mm. Card grid height = 270mm (5 * 54mm).
-  const maxGap = Math.max(0, (pHeight - 270 - (2 * pageMargin)) / 4);
+  // Total page height = pHeight mm. Card grid height = 283.5mm (5 * 56.7mm).
+  const maxGap = Math.max(0, (pHeight - 283.5 - (2 * pageMargin)) / 4);
   const safeGap = Math.min(gap, maxGap);
 
   return (
@@ -2693,7 +2694,7 @@ function PrintingView({
           display: grid;
           width: ${pWidth}mm;
           grid-template-columns: ${halfWidth}mm ${halfWidth}mm;
-          grid-template-rows: repeat(5, 54mm);
+          grid-template-rows: repeat(5, 56.7mm);
           row-gap: ${safeGap}mm;
           column-gap: 0mm;
           justify-items: center;
@@ -2753,22 +2754,22 @@ function PrintingView({
                   if (!u) {
                     return (
                       <React.Fragment key={`empty-row-${rowIdx}`}>
-                        <div className="w-[85.6mm] h-[54mm] opacity-0" />
-                        <div className="w-[85.6mm] h-[54mm] opacity-0" />
+                        <div className="w-[89.9mm] h-[56.7mm] opacity-0" />
+                        <div className="w-[89.9mm] h-[56.7mm] opacity-0" />
                       </React.Fragment>
                     );
                   }
                   return (
                     <React.Fragment key={`side-pair-${u.id}`}>
                       {/* Sisi Kiri: Halaman Pertama (Depan) */}
-                      <div className="flex items-center justify-center relative w-[85.6mm] h-[54mm] overflow-hidden">
+                      <div className="flex items-center justify-center relative w-[89.9mm] h-[56.7mm] overflow-hidden">
                         <div 
                           className="absolute"
                           style={{
-                            width: '54mm',
-                            height: '85.6mm',
-                            left: '15.8mm',
-                            top: '-15.8mm',
+                            width: '56.7mm',
+                            height: '89.88mm',
+                            left: '16.59mm',
+                            top: '-16.59mm',
                             transform: 'rotate(90deg)',
                             transformOrigin: 'center center'
                           }}
@@ -2778,14 +2779,14 @@ function PrintingView({
                       </div>
 
                       {/* Sisi Kanan: Halaman Kedua (Belakang) */}
-                      <div className="flex items-center justify-center relative w-[85.6mm] h-[54mm] overflow-hidden">
+                      <div className="flex items-center justify-center relative w-[89.9mm] h-[56.7mm] overflow-hidden">
                         <div 
                           className="absolute"
                           style={{
-                            width: '54mm',
-                            height: '85.6mm',
-                            left: '15.8mm',
-                            top: '-15.8mm',
+                            width: '56.7mm',
+                            height: '89.88mm',
+                            left: '16.59mm',
+                            top: '-16.59mm',
                             transform: `rotate(${backRotation === '-90' ? '-90' : '90'}deg)`,
                             transformOrigin: 'center center'
                           }}
@@ -2808,17 +2809,17 @@ function PrintingView({
               <div className="a4-grid">
                 {getPaddedBatch(batch, 10).map((u, idx) => {
                   if (!u) {
-                    return <div key={`empty-front-${idx}`} className="w-[85.6mm] h-[54mm] opacity-0" />;
+                    return <div key={`empty-front-${idx}`} className="w-[89.9mm] h-[56.7mm] opacity-0" />;
                   }
                   return (
-                    <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[85.6mm] h-[54mm] overflow-hidden">
+                    <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[89.9mm] h-[56.7mm] overflow-hidden">
                       <div 
                         className="absolute"
                         style={{
-                          width: '54mm',
-                          height: '85.6mm',
-                          left: '15.8mm',
-                          top: '-15.8mm',
+                          width: '56.7mm',
+                          height: '89.88mm',
+                          left: '16.59mm',
+                          top: '-16.59mm',
                           transform: 'rotate(90deg)',
                           transformOrigin: 'center center'
                         }}
@@ -2838,17 +2839,17 @@ function PrintingView({
               <div className="a4-grid">
                 {getMirroredBackBatch(getPaddedBatch(batch, 10)).map((u, idx) => {
                   if (!u) {
-                    return <div key={`empty-back-${idx}`} className="w-[85.6mm] h-[54mm] opacity-0" />;
+                    return <div key={`empty-back-${idx}`} className="w-[89.9mm] h-[56.7mm] opacity-0" />;
                   }
                   return (
-                    <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[85.6mm] h-[54mm] overflow-hidden">
+                    <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[89.9mm] h-[56.7mm] overflow-hidden">
                       <div 
                         className="absolute"
                         style={{
-                          width: '54mm',
-                          height: '85.6mm',
-                          left: '15.8mm',
-                          top: '-15.8mm',
+                          width: '56.7mm',
+                          height: '89.88mm',
+                          left: '16.59mm',
+                          top: '-16.59mm',
                           transform: `rotate(${backRotation === '90' ? '90' : '-90'}deg)`,
                           transformOrigin: 'center center'
                         }}
@@ -2871,17 +2872,17 @@ function PrintingView({
               <div className="a4-grid">
                 {getPaddedBatch(batch, 10).map((u, idx) => {
                   if (!u) {
-                    return <div key={`empty-front-${idx}`} className="w-[85.6mm] h-[54mm] opacity-0" />;
+                    return <div key={`empty-front-${idx}`} className="w-[89.9mm] h-[56.7mm] opacity-0" />;
                   }
                   return (
-                    <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[85.6mm] h-[54mm] overflow-hidden">
+                    <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[89.9mm] h-[56.7mm] overflow-hidden">
                       <div 
                         className="absolute"
                         style={{
-                          width: '54mm',
-                          height: '85.6mm',
-                          left: '15.8mm',
-                          top: '-15.8mm',
+                          width: '56.7mm',
+                          height: '89.88mm',
+                          left: '16.59mm',
+                          top: '-16.59mm',
                           transform: 'rotate(90deg)',
                           transformOrigin: 'center center'
                         }}
@@ -2899,17 +2900,17 @@ function PrintingView({
               <div className="a4-grid">
                 {getMirroredBackBatch(getPaddedBatch(batch, 10)).map((u, idx) => {
                   if (!u) {
-                    return <div key={`empty-back-${idx}`} className="w-[85.6mm] h-[54mm] opacity-0" />;
+                    return <div key={`empty-back-${idx}`} className="w-[89.9mm] h-[56.7mm] opacity-0" />;
                   }
                   return (
-                    <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[85.6mm] h-[54mm] overflow-hidden">
+                    <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[89.9mm] h-[56.7mm] overflow-hidden">
                       <div 
                         className="absolute"
                         style={{
-                          width: '54mm',
-                          height: '85.6mm',
-                          left: '15.8mm',
-                          top: '-15.8mm',
+                          width: '56.7mm',
+                          height: '89.88mm',
+                          left: '16.59mm',
+                          top: '-16.59mm',
                           transform: `rotate(${backRotation === '90' ? '90' : '-90'}deg)`,
                           transformOrigin: 'center center'
                         }}

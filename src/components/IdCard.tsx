@@ -276,19 +276,19 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
   <div
     ref={innerRef}
     style={{ 
-      width: '54mm', 
-      height: '85.6mm',
+      width: '56.7mm', 
+      height: '89.88mm',
       backgroundImage: `url(${settings.frontBg})`,
-      backgroundSize: '97%',
+      backgroundSize: '100%',
       backgroundPosition: 'center 55%',
       backgroundRepeat: 'no-repeat',
       colorScheme: 'light',
       boxSizing: 'border-box',
       imageRendering: 'high-quality',
-      borderRadius: '3.18mm', // CR-80 standard rounded corners (approx R3)
+      borderRadius: '3.3mm',
     }}
     className={cn(
-      "relative bg-[#fff1f2] overflow-hidden border-[1px] border-rose-200 text-slate-900 select-none box-border id-card-output",
+      "relative bg-[#fff1f2] overflow-hidden border-[2px] border-rose-400 text-slate-900 select-none box-border id-card-output",
       !forceSmall && "shadow-md"
     )}
   >
@@ -297,7 +297,7 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
       className="absolute inset-0 z-0" 
       style={{ 
         background: 'linear-gradient(to bottom, rgba(255, 241, 242, 0.75), rgba(255, 241, 242, 0.90))',
-        borderRadius: '3.18mm',
+        borderRadius: '3.3mm',
       }}
     />
 
@@ -428,15 +428,15 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
   <div
     ref={innerRef}
     style={{ 
-      width: '54mm', 
-      height: '85.6mm',
+      width: '56.7mm', 
+      height: '89.88mm',
       colorScheme: 'light',
       boxSizing: 'border-box',
       imageRendering: 'high-quality',
-      borderRadius: '3.18mm', // CR-80 standard rounded corners (approx R3)
+      borderRadius: '3.3mm',
     }}
     className={cn(
-      "relative bg-[#fff1f2] overflow-hidden border-[1px] border-rose-200 text-slate-900 select-none box-border id-card-output",
+      "relative bg-[#fff1f2] overflow-hidden border-[2px] border-rose-400 text-slate-900 select-none box-border id-card-output",
       !forceSmall && "shadow-md"
     )}
   >
@@ -445,7 +445,7 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
       className="absolute inset-0 z-0" 
       style={{ 
         background: 'linear-gradient(to bottom, rgba(255, 241, 242, 0.5), rgba(255, 241, 242, 0.7))',
-        borderRadius: '3.18mm',
+        borderRadius: '3.3mm',
       }}
     />
 
@@ -464,8 +464,6 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
           opacity: 0.85,
-          transform: 'scale(1.02)',
-          transformOrigin: 'center center',
           filter: forceSmall ? 'none' : 'saturate(0.7) contrast(1.05) brightness(1.05)',
           imageRendering: 'high-quality',
         }}

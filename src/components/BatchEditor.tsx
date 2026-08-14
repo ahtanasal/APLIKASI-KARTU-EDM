@@ -91,10 +91,11 @@ const formatPanditaPinyin = (pinyin: string): string => {
   let cleanPinyin = pinyin.replace(/\bPANDITA\b/gi, "").replace(/\s+/g, " ").trim();
   if (!cleanPinyin) return "";
   cleanPinyin = cleanPinyin
-    .replace(/lim\s*pi\s*lien/gi, 'LIN BIN LIAN')
-    .replace(/lin\s*bi\s*lien/gi, 'LIN BIN LIAN')
-    .replace(/lin\s*bin\s*lien/gi, 'LIN BIN LIAN')
-    .replace(/lin\s*bi\s*lian/gi, 'LIN BIN LIAN')
+    .replace(/lim\s*pi\s*lien/gi, 'LIN BI LIAN')
+    .replace(/lin\s*bi\s*lien/gi, 'LIN BI LIAN')
+    .replace(/lin\s*bin\s*lien/gi, 'LIN BI LIAN')
+    .replace(/lin\s*bin\s*lian/gi, 'LIN BI LIAN')
+    .replace(/lin\s*bi\s*lian/gi, 'LIN BI LIAN')
     .replace(/zhang\s*cen\s*chiu/gi, 'ZHANG ZHEN QIU')
     .replace(/xi\s*ma\s*yen/gi, 'XU MA YUAN');
   return `PANDITA ${cleanPinyin}`.toUpperCase();
