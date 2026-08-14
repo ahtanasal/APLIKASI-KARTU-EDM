@@ -163,8 +163,9 @@ const getLunarDateFallback = (masehi: string, lunarDate?: string, waktu?: string
 };
 
 const getPinyinFallback = (mandarinText: string, currentPinyin: string | undefined): string => {
-  if (currentPinyin && currentPinyin.trim()) {
-    return currentPinyin.trim().toUpperCase();
+  let fallback = (currentPinyin || '').trim();
+  if (fallback) {
+    return fallback.replace(/CHONG\s*HUI\s*FO\s*YEN/gi, 'CHONG HUI FO YUAN').toUpperCase();
   }
   if (!mandarinText) return '';
   const hasChinese = /[\u4e00-\u9fa5]/.test(mandarinText);
@@ -172,13 +173,13 @@ const getPinyinFallback = (mandarinText: string, currentPinyin: string | undefin
     try {
       const py = pinyin(mandarinText, { toneType: 'none' });
       if (py) {
-        return py.toUpperCase();
+        return py.replace(/CHONG\s*HUI\s*FO\s*YEN/gi, 'CHONG HUI FO YUAN').toUpperCase();
       }
     } catch (e) {
       console.error("Auto pinyin generation failed in IdCard for", mandarinText, e);
     }
   }
-  return (currentPinyin || '').trim().toUpperCase();
+  return fallback.toUpperCase();
 };
 
 const getEffectiveLength = (text: string): number => {

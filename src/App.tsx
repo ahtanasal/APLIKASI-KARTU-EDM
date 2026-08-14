@@ -190,6 +190,16 @@ const formatPanditaPinyin = (pinyin: string): string => {
   return `PANDITA ${cleanPinyin}`.toUpperCase();
 };
 
+// Helper to format Vihara Pinyin (ensures Chong Hui Fo Yuan)
+export const formatViharaPinyin = (pinyin: string = ''): string => {
+  if (!pinyin) return '';
+  return pinyin
+    .replace(/chong\s*hui\s*fo\s*yen/gi, 'CHONG HUI FO YUAN')
+    .replace(/chong\s*hui\s*fo\s*yuan/gi, 'CHONG HUI FO YUAN')
+    .trim()
+    .toUpperCase();
+};
+
 export const calculateLunarDate = (masehi: string, waktu?: string) => {
   if (!masehi) return "";
   try {
@@ -432,6 +442,11 @@ export default function App() {
               } else if (item.pandita && /碧蓮|林.*碧蓮/.test(item.pandita)) {
                 item.panditaPinyin = 'PANDITA LIN BI LIAN';
               }
+              if (item.viharaPinyin) {
+                item.viharaPinyin = formatViharaPinyin(item.viharaPinyin);
+              } else if (item.vihara && /崇慧/.test(item.vihara)) {
+                item.viharaPinyin = 'CHONG HUI FO YUAN';
+              }
               return item;
             });
             setUmats(updated);
@@ -444,14 +459,17 @@ export default function App() {
     const loadLocalViharasFallback = () => {
       const localSaved = localStorage.getItem('edm_master_viharas');
       let initial = [
-        { name: '崇慧佛院', pinyin: 'CHONG HUI FO YEN' },
+        { name: '崇慧佛院', pinyin: 'CHONG HUI FO YUAN' },
         { name: '禮德佛堂', pinyin: 'LI DE FO TANG' }
       ];
       if (localSaved) {
         try {
           const parsed = JSON.parse(localSaved);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            initial = parsed;
+            initial = parsed.map((v: any) => ({
+              name: v.name,
+              pinyin: formatViharaPinyin(v.pinyin)
+            }));
           }
         } catch (e) {}
       }
@@ -496,9 +514,24 @@ export default function App() {
           item.panditaPinyin = 'PANDITA LIN BI LIAN';
           needsUpdate = true;
         }
+
+        if (item.viharaPinyin) {
+          const updatedVPinyin = formatViharaPinyin(item.viharaPinyin);
+          if (updatedVPinyin !== item.viharaPinyin) {
+            item.viharaPinyin = updatedVPinyin;
+            needsUpdate = true;
+          }
+        } else if (item.vihara && /崇慧/.test(item.vihara)) {
+          item.viharaPinyin = 'CHONG HUI FO YUAN';
+          needsUpdate = true;
+        }
+
         if (needsUpdate) {
           try {
-            setDoc(doc(db, 'umats', item.id), { panditaPinyin: item.panditaPinyin }, { merge: true }).catch(console.error);
+            setDoc(doc(db, 'umats', item.id), { 
+              panditaPinyin: item.panditaPinyin || '',
+              viharaPinyin: item.viharaPinyin || ''
+            }, { merge: true }).catch(console.error);
           } catch (err) {}
         }
         list.push(item);
@@ -550,19 +583,42 @@ export default function App() {
     // 2. Sync Master Viharas
     const unsubscribeViharas = onSnapshot(doc(db, 'metadata', 'viharas'), (snapshot) => {
       if (snapshot.exists()) {
-        setMasterViharas(snapshot.data().list || []);
+        const rawList = snapshot.data().list || [];
+        let listChanged = false;
+        const cleanedList = rawList.map((v: any) => {
+          let pinyin = (v.pinyin || '').trim();
+          const updated = formatViharaPinyin(pinyin);
+          if (updated !== pinyin) {
+            listChanged = true;
+            return { ...v, pinyin: updated };
+          }
+          if (v.name === '崇慧佛院' && v.pinyin !== 'CHONG HUI FO YUAN') {
+            listChanged = true;
+            return { ...v, pinyin: 'CHONG HUI FO YUAN' };
+          }
+          return v;
+        });
+        setMasterViharas(cleanedList);
+        if (listChanged) {
+          try {
+            setDoc(doc(db, 'metadata', 'viharas'), { list: cleanedList }, { merge: true }).catch(console.error);
+          } catch (e) {}
+        }
       } else {
         // Fallback to local storage or defaults, then seed
         const localSaved = localStorage.getItem('edm_master_viharas');
         let initial = [
-          { name: '崇慧佛院', pinyin: 'CHONG HUI FO YEN' },
+          { name: '崇慧佛院', pinyin: 'CHONG HUI FO YUAN' },
           { name: '禮德佛堂', pinyin: 'LI DE FO TANG' }
         ];
         if (localSaved) {
           try {
             const parsed = JSON.parse(localSaved);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              initial = parsed;
+              initial = parsed.map((v: any) => ({
+                name: v.name,
+                pinyin: formatViharaPinyin(v.pinyin)
+              }));
             }
           } catch (e) {}
         }
@@ -1031,7 +1087,7 @@ export default function App() {
             namaIndonesia: rawNamaIndo,
             jabatanSuci: String(item['Jabatan'] || item['天職'] || '道親 - Umat'),
             vihara: rawVihara,
-            viharaPinyin: rawViharaPinyin,
+            viharaPinyin: formatViharaPinyin(rawViharaPinyin),
             pandita: formattedPandita,
             panditaPinyin: formatPanditaPinyin(rawPanditaPinyin),
             pengajak: String(item['Pengajak'] || item['引師'] || ''),
@@ -1239,7 +1295,7 @@ export default function App() {
           namaIndonesia,
           jabatanSuci: getMappedValue('jabatanSuci') || '道親 - Umat',
           vihara: rawVihara,
-          viharaPinyin: rawViharaPinyin,
+          viharaPinyin: formatViharaPinyin(rawViharaPinyin),
           pandita: formattedPandita,
           panditaPinyin: formatPanditaPinyin(rawPanditaPinyin),
           pengajak: getMappedValue('pengajak'),
@@ -3272,9 +3328,12 @@ function UmatForm({
         acc[key] = finalJabatanSuci.toUpperCase();
       } else if (typeof val === 'string') {
         const trimmed = val.trim();
-        if (key === 'vihara' || key === 'viharaPinyin') {
-          // Ensure vihara and its pinyin stay on exactly 1 line
+        if (key === 'vihara') {
+          // Ensure vihara stays on exactly 1 line
           acc[key as keyof UmatInput] = trimmed.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').toUpperCase();
+        } else if (key === 'viharaPinyin') {
+          const cleaned = trimmed.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ');
+          acc[key as keyof UmatInput] = formatViharaPinyin(cleaned);
         } else if (key === 'pandita') {
           const cleaned = trimmed.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ');
           acc[key as keyof UmatInput] = formatPanditaName(cleaned);
@@ -3289,6 +3348,12 @@ function UmatForm({
       }
       return acc;
     }, {} as UmatInput);
+
+    // Autofill / format Vihara Pinyin if found in the system
+    if (capitalizedData.vihara) {
+      const vp = capitalizedData.viharaPinyin || findPinyinMatch(capitalizedData.vihara);
+      capitalizedData.viharaPinyin = formatViharaPinyin(vp);
+    }
 
     // Autofill / format Pandita Pinyin if found in the system
     if (capitalizedData.pandita) {
@@ -3912,7 +3977,7 @@ function MasterDataManager({
   const addVihara = () => {
     if (!vName) return;
     const cleaned = vName.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
-    setViharas([...viharas, { name: cleaned.toUpperCase(), pinyin: (vPinyin || '').toUpperCase() }]);
+    setViharas([...viharas, { name: cleaned.toUpperCase(), pinyin: formatViharaPinyin(vPinyin || '') }]);
     setVName('');
     setVPinyin('');
   };
@@ -3927,7 +3992,7 @@ function MasterDataManager({
     if (!editVName) return;
     const cleaned = editVName.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
     const newList = [...viharas];
-    newList[index] = { name: cleaned.toUpperCase(), pinyin: (editVPinyin || '').toUpperCase() };
+    newList[index] = { name: cleaned.toUpperCase(), pinyin: formatViharaPinyin(editVPinyin || '') };
     setViharas(newList);
     setEditingVIndex(null);
   };

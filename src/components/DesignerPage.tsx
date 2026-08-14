@@ -34,7 +34,7 @@ const SAMPLE_DATA: Umat = {
   penanggung: 'Penanggung',
   penanggungPinyin: 'PENANGGUNG',
   vihara: '崇慧佛院',
-  viharaPinyin: 'CHONG HUI FO YEN',
+  viharaPinyin: 'CHONG HUI FO YUAN',
   jabatanSuci: '道親 - UMAT',
   phone: '628123456789',
   createdAt: new Date().toISOString()

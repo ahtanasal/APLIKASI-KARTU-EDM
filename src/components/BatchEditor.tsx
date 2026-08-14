@@ -101,6 +101,15 @@ const formatPanditaPinyin = (pinyin: string): string => {
   return `PANDITA ${cleanPinyin}`.toUpperCase();
 };
 
+export const formatViharaPinyin = (pinyin: string = ''): string => {
+  if (!pinyin) return '';
+  return pinyin
+    .replace(/chong\s*hui\s*fo\s*yen/gi, 'CHONG HUI FO YUAN')
+    .replace(/chong\s*hui\s*fo\s*yuan/gi, 'CHONG HUI FO YUAN')
+    .trim()
+    .toUpperCase();
+};
+
 export const BatchEditor: React.FC<BatchEditorProps> = ({
   umats,
   masterViharas,
@@ -122,13 +131,19 @@ export const BatchEditor: React.FC<BatchEditorProps> = ({
     // Deep copy to prevent mutating parent state directly
     const copied: Umat[] = JSON.parse(JSON.stringify(umats));
     const processed = copied.map(u => {
-      // 1. If vihara is present and viharaPinyin is missing, autofill from masterViharas
+      // 1. If vihara is present, autofill/format from masterViharas
       if (u.vihara) {
         const query = u.vihara.trim().toUpperCase();
         const matched = masterViharas.find(v => (v.name?.trim() || '').toUpperCase() === query);
         if (matched && matched.pinyin) {
-          u.viharaPinyin = matched.pinyin.toUpperCase();
+          u.viharaPinyin = formatViharaPinyin(matched.pinyin);
+        } else if (u.viharaPinyin) {
+          u.viharaPinyin = formatViharaPinyin(u.viharaPinyin);
+        } else if (/崇慧/.test(u.vihara)) {
+          u.viharaPinyin = 'CHONG HUI FO YUAN';
         }
+      } else if (u.viharaPinyin) {
+        u.viharaPinyin = formatViharaPinyin(u.viharaPinyin);
       }
 
       // Helper function to auto-convert Chinese/Hanzi to Pinyin if the pinyin is empty
@@ -251,18 +266,18 @@ export const BatchEditor: React.FC<BatchEditorProps> = ({
           // Check masterViharas first automatically
           const matchedMaster = masterViharas.find(v => (v.name?.trim() || '').toUpperCase() === formatVihara.toUpperCase());
           if (matchedMaster && matchedMaster.pinyin) {
-            newUmat.viharaPinyin = matchedMaster.pinyin.toUpperCase();
+            newUmat.viharaPinyin = formatViharaPinyin(matchedMaster.pinyin);
           } else {
             const matched = findPinyinMatchInDrafts(formatVihara, id);
             if (matched) {
-              newUmat.viharaPinyin = matched.toUpperCase();
+              newUmat.viharaPinyin = formatViharaPinyin(matched);
             } else if (!newUmat.viharaPinyin || !newUmat.viharaPinyin.trim()) {
               const hasChinese = /[\u4e00-\u9fa5]/.test(formatVihara);
               if (hasChinese) {
                 try {
                   const py = pinyin(formatVihara, { toneType: 'none' });
                   if (py) {
-                    newUmat.viharaPinyin = py.toUpperCase();
+                    newUmat.viharaPinyin = formatViharaPinyin(py);
                   }
                 } catch(e) {
                   console.error("Auto pinyin failed for vihara", e);
@@ -271,6 +286,10 @@ export const BatchEditor: React.FC<BatchEditorProps> = ({
             }
           }
         }
+      }
+
+      if (field === 'viharaPinyin') {
+        newUmat.viharaPinyin = formatViharaPinyin(updatedVal.trim());
       }
       
       if (field === 'pandita') {
