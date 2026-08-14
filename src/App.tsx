@@ -42,7 +42,8 @@ import {
   UserPlus,
   LayoutGrid,
   List,
-  Filter
+  Filter,
+  Database
 } from 'lucide-react';
 
 const TARGET_FIELDS = [
@@ -302,6 +303,10 @@ export default function App() {
   const [masterViharas, setMasterViharas] = useState<{name: string, pinyin: string}[]>([]);
   const [masterPanditas, setMasterPanditas] = useState<{name: string, pinyin: string}[]>([]);
 
+  // Cloud Firestore Status State
+  const [isQuotaExceeded, setIsQuotaExceeded] = useState(false);
+  const [dismissQuotaBanner, setDismissQuotaBanner] = useState(false);
+
   // Logout Feedback & Confirmation Modal states
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [logoutFeedback, setLogoutFeedback] = useState<string | null>(null);
@@ -328,17 +333,19 @@ export default function App() {
           userList.push({ id: docSnap.id, ...docSnap.data() } as AppUser);
         });
 
-        // Ensure default admin WSCHFY always exists
+        // Ensure default admin WSCHFY always exists in memory
         const hasWschfy = userList.some(u => u.username.toUpperCase() === 'WSCHFY');
         if (!hasWschfy) {
-          setDoc(doc(db, 'users', DEFAULT_ADMIN.id), DEFAULT_ADMIN).catch(console.error);
           userList.unshift(DEFAULT_ADMIN);
         }
 
         setAppUsers(userList);
         localStorage.setItem('edm_app_users', JSON.stringify(userList));
-      }, (error) => {
-        console.warn("Firestore users listener warning:", error);
+      }, (error: any) => {
+        if (error?.code === 'resource-exhausted' || error?.message?.includes('Quota exceeded')) {
+          setIsQuotaExceeded(true);
+        }
+        console.warn("Firestore users listener warning:", error?.message || error);
         const localUsers = localStorage.getItem('edm_app_users');
         if (localUsers) {
           try {
@@ -386,24 +393,21 @@ export default function App() {
       createdAt: new Date().toISOString()
     };
 
-    try {
-      await setDoc(doc(db, 'users', newId), newUser);
-    } catch (e) {
-      console.error("Firestore setDoc user error:", e);
-    }
-
     const updated = [...appUsers, newUser];
     setAppUsers(updated);
     localStorage.setItem('edm_app_users', JSON.stringify(updated));
+
+    try {
+      await setDoc(doc(db, 'users', newId), newUser);
+    } catch (e: any) {
+      if (e?.code === 'resource-exhausted' || e?.message?.includes('Quota exceeded')) {
+        setIsQuotaExceeded(true);
+      }
+      console.warn("Firestore setDoc user warning (saved locally):", e);
+    }
   };
 
   const handleUpdateUser = async (id: string, updatedData: Partial<AppUser>) => {
-    try {
-      await updateDoc(doc(db, 'users', id), updatedData);
-    } catch (e) {
-      console.error("Firestore updateDoc user error:", e);
-    }
-
     const updated = appUsers.map(u => u.id === id ? { ...u, ...updatedData } : u);
     setAppUsers(updated);
     localStorage.setItem('edm_app_users', JSON.stringify(updated));
@@ -413,18 +417,30 @@ export default function App() {
       setCurrentUser(newCurrent);
       localStorage.setItem('edm_auth_user', JSON.stringify(newCurrent));
     }
+
+    try {
+      await updateDoc(doc(db, 'users', id), updatedData);
+    } catch (e: any) {
+      if (e?.code === 'resource-exhausted' || e?.message?.includes('Quota exceeded')) {
+        setIsQuotaExceeded(true);
+      }
+      console.warn("Firestore updateDoc user warning (saved locally):", e);
+    }
   };
 
   const handleDeleteUser = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, 'users', id));
-    } catch (e) {
-      console.error("Firestore deleteDoc user error:", e);
-    }
-
     const updated = appUsers.filter(u => u.id !== id);
     setAppUsers(updated);
     localStorage.setItem('edm_app_users', JSON.stringify(updated));
+
+    try {
+      await deleteDoc(doc(db, 'users', id));
+    } catch (e: any) {
+      if (e?.code === 'resource-exhausted' || e?.message?.includes('Quota exceeded')) {
+        setIsQuotaExceeded(true);
+      }
+      console.warn("Firestore deleteDoc user warning (saved locally):", e);
+    }
   };
 
   // Clean real-time Firestore synchronization
@@ -503,79 +519,36 @@ export default function App() {
       const list: Umat[] = [];
       snapshot.forEach((docSnap) => {
         const item = docSnap.data() as Umat;
-        let needsUpdate = false;
         if (item.panditaPinyin) {
-          const updatedPPinyin = formatPanditaPinyin(item.panditaPinyin);
-          if (updatedPPinyin !== item.panditaPinyin) {
-            item.panditaPinyin = updatedPPinyin;
-            needsUpdate = true;
-          }
+          item.panditaPinyin = formatPanditaPinyin(item.panditaPinyin);
         } else if (item.pandita && /碧蓮|林.*碧蓮/.test(item.pandita)) {
           item.panditaPinyin = 'PANDITA LIN BI LIAN';
-          needsUpdate = true;
         }
 
         if (item.viharaPinyin) {
-          const updatedVPinyin = formatViharaPinyin(item.viharaPinyin);
-          if (updatedVPinyin !== item.viharaPinyin) {
-            item.viharaPinyin = updatedVPinyin;
-            needsUpdate = true;
-          }
+          item.viharaPinyin = formatViharaPinyin(item.viharaPinyin);
         } else if (item.vihara && /崇慧/.test(item.vihara)) {
           item.viharaPinyin = 'CHONG HUI FO YUAN';
-          needsUpdate = true;
         }
 
-        if (needsUpdate) {
-          try {
-            setDoc(doc(db, 'umats', item.id), { 
-              panditaPinyin: item.panditaPinyin || '',
-              viharaPinyin: item.viharaPinyin || ''
-            }, { merge: true }).catch(console.error);
-          } catch (err) {}
-        }
         list.push(item);
       });
       list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       
-      // If Firestore is completely empty but the user has data in localStorage,
-      // upload their local data to Firestore to migrate smoothly!
-      if (list.length === 0) {
-        const localSaved = localStorage.getItem('edm_umats');
-        if (localSaved) {
-          try {
-            const parsed = JSON.parse(localSaved);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              console.log("Migrating local data to remote Firestore...", parsed.length);
-              const migrated = parsed.map(u => ({
-                ...u,
-                id: u.id || generateId(),
-                createdAt: u.createdAt || new Date().toISOString()
-              }));
-              // Batch write helper
-              migrated.forEach(async (u) => {
-                try {
-                  await setDoc(doc(db, 'umats', u.id), u);
-                } catch (err: any) {
-                  if (err.code === 'permission-denied') {
-                    handleFirestoreError(err, OperationType.CREATE, `umats/${u.id}`);
-                  }
-                }
-              });
-              return;
-            }
-          } catch (e) {
-            console.error("Local migration parse failed:", e);
-          }
-        }
+      if (list.length > 0) {
+        setUmats(list);
+        localStorage.setItem('edm_umats', JSON.stringify(list));
+      } else {
+        loadLocalUmatsFallback();
       }
-      
-      setUmats(list);
     }, (error: any) => {
+      if (error?.code === 'resource-exhausted' || error?.message?.includes('Quota exceeded')) {
+        setIsQuotaExceeded(true);
+      }
       if (error.code === 'permission-denied') {
         handleFirestoreError(error, OperationType.LIST, 'umats');
       } else {
-        console.warn("Firestore connection warning for 'umats':", error.message);
+        console.warn("Firestore connection notice for 'umats' (using local storage):", error.message || error);
       }
       loadLocalUmatsFallback();
     });
@@ -584,58 +557,26 @@ export default function App() {
     const unsubscribeViharas = onSnapshot(doc(db, 'metadata', 'viharas'), (snapshot) => {
       if (snapshot.exists()) {
         const rawList = snapshot.data().list || [];
-        let listChanged = false;
         const cleanedList = rawList.map((v: any) => {
           let pinyin = (v.pinyin || '').trim();
-          const updated = formatViharaPinyin(pinyin);
-          if (updated !== pinyin) {
-            listChanged = true;
-            return { ...v, pinyin: updated };
+          if (v.name === '崇慧佛院' && (!pinyin || pinyin !== 'CHONG HUI FO YUAN')) {
+            pinyin = 'CHONG HUI FO YUAN';
           }
-          if (v.name === '崇慧佛院' && v.pinyin !== 'CHONG HUI FO YUAN') {
-            listChanged = true;
-            return { ...v, pinyin: 'CHONG HUI FO YUAN' };
-          }
-          return v;
+          return { ...v, pinyin: formatViharaPinyin(pinyin) };
         });
         setMasterViharas(cleanedList);
-        if (listChanged) {
-          try {
-            setDoc(doc(db, 'metadata', 'viharas'), { list: cleanedList }, { merge: true }).catch(console.error);
-          } catch (e) {}
-        }
+        localStorage.setItem('edm_master_viharas', JSON.stringify(cleanedList));
       } else {
-        // Fallback to local storage or defaults, then seed
-        const localSaved = localStorage.getItem('edm_master_viharas');
-        let initial = [
-          { name: '崇慧佛院', pinyin: 'CHONG HUI FO YUAN' },
-          { name: '禮德佛堂', pinyin: 'LI DE FO TANG' }
-        ];
-        if (localSaved) {
-          try {
-            const parsed = JSON.parse(localSaved);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              initial = parsed.map((v: any) => ({
-                name: v.name,
-                pinyin: formatViharaPinyin(v.pinyin)
-              }));
-            }
-          } catch (e) {}
-        }
-        setMasterViharas(initial);
-        try {
-          setDoc(doc(db, 'metadata', 'viharas'), { list: initial });
-        } catch (err: any) {
-          if (err.code === 'permission-denied') {
-            handleFirestoreError(err, OperationType.WRITE, 'metadata/viharas');
-          }
-        }
+        loadLocalViharasFallback();
       }
     }, (error: any) => {
+      if (error?.code === 'resource-exhausted' || error?.message?.includes('Quota exceeded')) {
+        setIsQuotaExceeded(true);
+      }
       if (error.code === 'permission-denied') {
         handleFirestoreError(error, OperationType.GET, 'metadata/viharas');
       } else {
-        console.warn("Firestore connection warning for 'metadata/viharas':", error.message);
+        console.warn("Firestore connection notice for 'metadata/viharas' (using local storage):", error.message || error);
       }
       loadLocalViharasFallback();
     });
@@ -644,55 +585,25 @@ export default function App() {
     const unsubscribePanditas = onSnapshot(doc(db, 'metadata', 'panditas'), (snapshot) => {
       if (snapshot.exists()) {
         const rawList: { name: string, pinyin: string }[] = snapshot.data().list || [];
-        let needsUpdate = false;
         const updatedList = rawList.map(p => {
-          const formattedName = formatPanditaName(p.name);
-          const formattedPinyin = formatPanditaPinyin(p.pinyin);
-          if (formattedName !== p.name || formattedPinyin !== p.pinyin) {
-            needsUpdate = true;
-          }
-          return { name: formattedName, pinyin: formattedPinyin };
+          return { 
+            name: formatPanditaName(p.name), 
+            pinyin: formatPanditaPinyin(p.pinyin) 
+          };
         });
-
         setMasterPanditas(updatedList);
-        if (needsUpdate) {
-          try {
-            setDoc(doc(db, 'metadata', 'panditas'), { list: updatedList });
-          } catch (err: any) {}
-        }
+        localStorage.setItem('edm_master_panditas', JSON.stringify(updatedList));
       } else {
-        // Fallback to local storage or defaults, then seed
-        const localSaved = localStorage.getItem('edm_master_panditas');
-        let initial = [
-          { name: '林碧蓮點傳師', pinyin: 'PANDITA LIN BI LIAN' },
-          { name: '張珍球點傳師', pinyin: 'PANDITA ZHANG ZHEN QIU' },
-          { name: '許媽源點傳師', pinyin: 'PANDITA XU MA YUAN' }
-        ];
-        if (localSaved) {
-          try {
-            const parsed = JSON.parse(localSaved);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              initial = parsed.map((p: any) => ({
-                name: formatPanditaName(p.name),
-                pinyin: formatPanditaPinyin(p.pinyin)
-              }));
-            }
-          } catch (e) {}
-        }
-        setMasterPanditas(initial);
-        try {
-          setDoc(doc(db, 'metadata', 'panditas'), { list: initial });
-        } catch (err: any) {
-          if (err.code === 'permission-denied') {
-            handleFirestoreError(err, OperationType.WRITE, 'metadata/panditas');
-          }
-        }
+        loadLocalPanditasFallback();
       }
     }, (error: any) => {
+      if (error?.code === 'resource-exhausted' || error?.message?.includes('Quota exceeded')) {
+        setIsQuotaExceeded(true);
+      }
       if (error.code === 'permission-denied') {
         handleFirestoreError(error, OperationType.GET, 'metadata/panditas');
       } else {
-        console.warn("Firestore connection warning for 'metadata/panditas':", error.message);
+        console.warn("Firestore connection notice for 'metadata/panditas' (using local storage):", error.message || error);
       }
       loadLocalPanditasFallback();
     });
@@ -768,7 +679,10 @@ export default function App() {
       try {
         await deleteDoc(doc(db, 'umats', id));
       } catch (err: any) {
-        console.error("Failed to delete umat from Firestore:", err);
+        if (err?.code === 'resource-exhausted' || err?.message?.includes('Quota exceeded')) {
+          setIsQuotaExceeded(true);
+        }
+        console.warn("Firestore deleteDoc note (saved locally):", err?.message || err);
       }
     });
 
@@ -783,7 +697,10 @@ export default function App() {
       try {
         await setDoc(doc(db, 'umats', u.id), u);
       } catch (err: any) {
-        console.error("Failed to save/update umat in Firestore:", err);
+        if (err?.code === 'resource-exhausted' || err?.message?.includes('Quota exceeded')) {
+          setIsQuotaExceeded(true);
+        }
+        console.warn("Firestore setDoc note (saved locally):", err?.message || err);
         if (err.code === 'permission-denied') {
           handleFirestoreError(err, OperationType.WRITE, `umats/${u.id}`);
         }
@@ -1535,6 +1452,34 @@ export default function App() {
         )}
 
         <div className="max-w-4xl mx-auto p-6 md:p-12">
+          {isQuotaExceeded && !dismissQuotaBanner && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 p-4 bg-amber-50/95 border border-amber-300/80 rounded-2xl flex items-start justify-between gap-3 text-xs text-amber-900 shadow-sm"
+            >
+              <div className="flex items-start gap-3">
+                <div className="p-1.5 bg-amber-200/80 text-amber-900 rounded-xl font-bold shrink-0 mt-0.5">
+                  <Database size={16} />
+                </div>
+                <div className="space-y-1">
+                  <p className="font-bold text-amber-950 text-sm">Mode Offline / Penyimpanan Lokal Aktif</p>
+                  <p className="text-amber-800 leading-relaxed text-xs">
+                    Batas kuota harian Firebase Firestore telah tercapai dan akan di-reset otomatis esok hari.
+                    Aplikasi tetap berfungsi penuh dan seluruh data umat serta master data Anda tersimpan aman secara offline di browser (Local Storage).
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setDismissQuotaBanner(true)}
+                className="p-1.5 text-amber-700 hover:text-amber-950 hover:bg-amber-100 rounded-lg transition-colors shrink-0"
+                title="Tutup pemberitahuan"
+              >
+                <X size={16} />
+              </button>
+            </motion.div>
+          )}
+
           <AnimatePresence mode="wait">
             {activeTab === 'input' ? (
               <motion.div
@@ -2119,11 +2064,29 @@ export default function App() {
                 <MasterDataManager 
                   viharas={masterViharas} 
                   setViharas={async (v) => {
-                    await setDoc(doc(db, 'metadata', 'viharas'), { list: v });
+                    setMasterViharas(v);
+                    localStorage.setItem('edm_master_viharas', JSON.stringify(v));
+                    try {
+                      await setDoc(doc(db, 'metadata', 'viharas'), { list: v });
+                    } catch (e: any) {
+                      if (e?.code === 'resource-exhausted' || e?.message?.includes('Quota exceeded')) {
+                        setIsQuotaExceeded(true);
+                      }
+                      console.warn("Firestore setDoc viharas warning (stored locally):", e?.message || e);
+                    }
                   }}
                   panditas={masterPanditas}
                   setPanditas={async (p) => {
-                    await setDoc(doc(db, 'metadata', 'panditas'), { list: p });
+                    setMasterPanditas(p);
+                    localStorage.setItem('edm_master_panditas', JSON.stringify(p));
+                    try {
+                      await setDoc(doc(db, 'metadata', 'panditas'), { list: p });
+                    } catch (e: any) {
+                      if (e?.code === 'resource-exhausted' || e?.message?.includes('Quota exceeded')) {
+                        setIsQuotaExceeded(true);
+                      }
+                      console.warn("Firestore setDoc panditas warning (stored locally):", e?.message || e);
+                    }
                   }}
                 />
               </motion.div>
@@ -3974,10 +3937,97 @@ function MasterDataManager({
   const [editPName, setEditPName] = useState('');
   const [editPPinyin, setEditPPinyin] = useState('');
 
+  const handleVNameChange = (val: string) => {
+    setVName(val);
+    if (!val.trim()) {
+      setVPinyin('');
+      return;
+    }
+    const hasChinese = /[\u4e00-\u9fa5]/.test(val);
+    if (hasChinese) {
+      try {
+        const py = pinyin(val, { toneType: 'none' });
+        if (py) {
+          setVPinyin(formatViharaPinyin(py));
+        }
+      } catch (e) {
+        console.error("Auto pinyin failed for vihara name:", e);
+      }
+    }
+  };
+
+  const handleEditVNameChange = (val: string) => {
+    setEditVName(val);
+    if (!val.trim()) {
+      setEditVPinyin('');
+      return;
+    }
+    const hasChinese = /[\u4e00-\u9fa5]/.test(val);
+    if (hasChinese) {
+      try {
+        const py = pinyin(val, { toneType: 'none' });
+        if (py) {
+          setEditVPinyin(formatViharaPinyin(py));
+        }
+      } catch (e) {
+        console.error("Auto pinyin failed for edit vihara name:", e);
+      }
+    }
+  };
+
+  const handlePNameChange = (val: string) => {
+    setPName(val);
+    const cleaned = val.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ');
+    if (!cleaned.trim()) {
+      setPPinyin('');
+      return;
+    }
+    const hasChinese = /[\u4e00-\u9fa5]/.test(val);
+    if (hasChinese) {
+      try {
+        const cleanBase = cleaned.replace(/點傳師|点传师/g, '').trim();
+        const py = pinyin(cleanBase || cleaned, { toneType: 'none' });
+        if (py) {
+          setPPinyin(formatPanditaPinyin(py));
+        }
+      } catch (e) {
+        console.error("Auto pinyin failed for pandita name:", e);
+      }
+    }
+  };
+
+  const handleEditPNameChange = (val: string) => {
+    setEditPName(val);
+    const cleaned = val.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ');
+    if (!cleaned.trim()) {
+      setEditPPinyin('');
+      return;
+    }
+    const hasChinese = /[\u4e00-\u9fa5]/.test(val);
+    if (hasChinese) {
+      try {
+        const cleanBase = cleaned.replace(/點傳師|点传师/g, '').trim();
+        const py = pinyin(cleanBase || cleaned, { toneType: 'none' });
+        if (py) {
+          setEditPPinyin(formatPanditaPinyin(py));
+        }
+      } catch (e) {
+        console.error("Auto pinyin failed for edit pandita name:", e);
+      }
+    }
+  };
+
   const addVihara = () => {
     if (!vName) return;
     const cleaned = vName.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
-    setViharas([...viharas, { name: cleaned.toUpperCase(), pinyin: formatViharaPinyin(vPinyin || '') }]);
+    let finalPinyin = (vPinyin || '').trim();
+    if (!finalPinyin && /[\u4e00-\u9fa5]/.test(cleaned)) {
+      try {
+        const py = pinyin(cleaned, { toneType: 'none' });
+        if (py) finalPinyin = py;
+      } catch (e) {}
+    }
+    setViharas([...viharas, { name: cleaned.toUpperCase(), pinyin: formatViharaPinyin(finalPinyin) }]);
     setVName('');
     setVPinyin('');
   };
@@ -3991,8 +4041,15 @@ function MasterDataManager({
   const saveEditVihara = (index: number) => {
     if (!editVName) return;
     const cleaned = editVName.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+    let finalPinyin = (editVPinyin || '').trim();
+    if (!finalPinyin && /[\u4e00-\u9fa5]/.test(cleaned)) {
+      try {
+        const py = pinyin(cleaned, { toneType: 'none' });
+        if (py) finalPinyin = py;
+      } catch (e) {}
+    }
     const newList = [...viharas];
-    newList[index] = { name: cleaned.toUpperCase(), pinyin: formatViharaPinyin(editVPinyin || '') };
+    newList[index] = { name: cleaned.toUpperCase(), pinyin: formatViharaPinyin(finalPinyin) };
     setViharas(newList);
     setEditingVIndex(null);
   };
@@ -4010,7 +4067,15 @@ function MasterDataManager({
     if (!pName) return;
     const cleaned = pName.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
     const formatted = formatPanditaName(cleaned);
-    const formattedPinyin = formatPanditaPinyin(pPinyin || '');
+    let finalPinyin = (pPinyin || '').trim();
+    if (!finalPinyin && /[\u4e00-\u9fa5]/.test(cleaned)) {
+      try {
+        const cleanBase = cleaned.replace(/點傳師|点传师/g, '').trim();
+        const py = pinyin(cleanBase || cleaned, { toneType: 'none' });
+        if (py) finalPinyin = py;
+      } catch (e) {}
+    }
+    const formattedPinyin = formatPanditaPinyin(finalPinyin);
     setPanditas([...panditas, { name: formatted, pinyin: formattedPinyin }]);
     setPName('');
     setPPinyin('');
@@ -4026,7 +4091,15 @@ function MasterDataManager({
     if (!editPName) return;
     const cleaned = editPName.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
     const formatted = formatPanditaName(cleaned);
-    const formattedPinyin = formatPanditaPinyin(editPPinyin || '');
+    let finalPinyin = (editPPinyin || '').trim();
+    if (!finalPinyin && /[\u4e00-\u9fa5]/.test(cleaned)) {
+      try {
+        const cleanBase = cleaned.replace(/點傳師|点传师/g, '').trim();
+        const py = pinyin(cleanBase || cleaned, { toneType: 'none' });
+        if (py) finalPinyin = py;
+      } catch (e) {}
+    }
+    const formattedPinyin = formatPanditaPinyin(finalPinyin);
     const newList = [...panditas];
     newList[index] = { name: formatted, pinyin: formattedPinyin };
     setPanditas(newList);
@@ -4061,11 +4134,11 @@ function MasterDataManager({
             <input 
               placeholder="Nama Vihara (Mandarin/Indo)" 
               value={vName} 
-              onChange={e => setVName(e.target.value)}
+              onChange={e => handleVNameChange(e.target.value)}
               className="w-full bg-white border border-stone-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-temple-gold font-sans"
             />
             <input 
-              placeholder="Pinyin Vihara" 
+              placeholder="Pinyin Vihara (Otomatis jika Mandarin)" 
               value={vPinyin} 
               onChange={e => setVPinyin(e.target.value)}
               className="w-full bg-white border border-stone-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-temple-gold font-sans"
@@ -4085,7 +4158,7 @@ function MasterDataManager({
                   <div className="flex-1 flex flex-col sm:flex-row items-center gap-2 mr-2">
                     <input 
                       value={editVName}
-                      onChange={e => setEditVName(e.target.value)}
+                      onChange={e => handleEditVNameChange(e.target.value)}
                       placeholder="Nama Vihara"
                       className="w-full sm:w-1/2 bg-stone-50 border border-amber-300 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-amber-500"
                     />
@@ -4150,13 +4223,13 @@ function MasterDataManager({
           
           <div className="bg-stone-50 p-6 rounded-3xl border border-stone-100 space-y-4">
             <input 
-              placeholder="Nama Pandita" 
+              placeholder="Nama Pandita (Mandarin)" 
               value={pName} 
-              onChange={e => setPName(e.target.value)}
+              onChange={e => handlePNameChange(e.target.value)}
               className="w-full bg-white border border-stone-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-temple-gold font-sans"
             />
             <input 
-              placeholder="Pinyin Pandita (Opsional)" 
+              placeholder="Pinyin Pandita (Otomatis jika Mandarin)" 
               value={pPinyin} 
               onChange={e => setPPinyin(e.target.value)}
               className="w-full bg-white border border-stone-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-temple-gold font-sans"
@@ -4176,7 +4249,7 @@ function MasterDataManager({
                   <div className="flex-1 flex flex-col sm:flex-row items-center gap-2 mr-2">
                     <input 
                       value={editPName}
-                      onChange={e => setEditPName(e.target.value)}
+                      onChange={e => handleEditPNameChange(e.target.value)}
                       placeholder="Nama Pandita"
                       className="w-full sm:w-1/2 bg-stone-50 border border-amber-300 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-amber-500"
                     />
