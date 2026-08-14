@@ -279,7 +279,7 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
       width: '54mm', 
       height: '85.6mm',
       backgroundImage: `url(${settings.frontBg})`,
-      backgroundSize: '95%',
+      backgroundSize: '97%',
       backgroundPosition: 'center 55%',
       backgroundRepeat: 'no-repeat',
       colorScheme: 'light',
@@ -464,6 +464,8 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
           opacity: 0.85,
+          transform: 'scale(1.02)',
+          transformOrigin: 'center center',
           filter: forceSmall ? 'none' : 'saturate(0.7) contrast(1.05) brightness(1.05)',
           imageRendering: 'high-quality',
         }}
