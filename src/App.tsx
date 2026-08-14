@@ -34,6 +34,7 @@ import {
   FileSpreadsheet,
   Layers,
   RefreshCw,
+  Columns2,
   Edit,
   LogOut,
   Shield,
@@ -265,12 +266,12 @@ export default function App() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isPrintMode, setIsPrintMode] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
-  const [printLayoutMode, setPrintLayoutMode] = useState<'all-fronts-first' | 'interleaved'>('all-fronts-first');
+  const [printLayoutMode, setPrintLayoutMode] = useState<'all-fronts-first' | 'interleaved' | 'side-by-side'>('side-by-side');
   const [printGap, setPrintGap] = useState<number>(2);
   const [printMargin, setPrintMargin] = useState<number>(5);
   const [printScale, setPrintScale] = useState<number>(100);
-  const [printBackRotation, setPrintBackRotation] = useState<'-90' | '90'>('-90');
-  const [printPaperSize, setPrintPaperSize] = useState<'a4' | '200x300'>('a4');
+  const [printBackRotation, setPrintBackRotation] = useState<'-90' | '90'>('90');
+  const [printPaperSize, setPrintPaperSize] = useState<'a4' | '200x300'>('200x300');
   const [editingUmat, setEditingUmat] = useState<Umat | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [jabatanFilter, setJabatanFilter] = useState<string>('all');
@@ -890,13 +891,8 @@ export default function App() {
     
     saveToLocal(updatedUmats);
     
-    // Start PDF Generation process
+    // Open Print / PDF Preview panel without auto-download
     setIsPrintMode(true);
-    
-    // Give time for PrintingView to render, then invoke PDF generator
-    setTimeout(() => {
-      handleSavePDF();
-    }, 1500);
   };
 
   useEffect(() => {
@@ -2297,17 +2293,29 @@ export default function App() {
                 <div>
                   <h4 className="font-serif font-bold text-sm leading-tight text-white">Panel Cetak Kartu Identitas</h4>
                   <p className="text-[10px] text-stone-400 mt-0.5">
-                    Jumlah: <span className="font-bold text-amber-400">{selectedIds.size}</span> Kartu | Estimasi: <span className="font-bold text-amber-400">{Math.ceil(selectedIds.size / 10)}</span> Lembar {printPaperSize === '200x300' ? '200x300mm' : 'A4'} (Bolak-Balik)
+                    Jumlah: <span className="font-bold text-amber-400">{selectedIds.size}</span> Kartu | Estimasi: <span className="font-bold text-amber-400">{printLayoutMode === 'side-by-side' ? Math.ceil(selectedIds.size / 5) : Math.ceil(selectedIds.size / 10)}</span> Lembar {printPaperSize === '200x300' ? '200x300mm' : 'A4'} {printLayoutMode === 'side-by-side' ? '(1 Sisi: Kiri Depan - Kanan Belakang)' : '(Bolak-Balik)'}
                   </p>
                 </div>
               </div>
 
-              {/* Layout & Spacing Selectors wrapper */}
+              {/* Layout Selectors wrapper */}
               <div className="flex flex-col xl:flex-row gap-4 items-stretch xl:items-center">
                 {/* Paper Size Selector */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <span className="text-[10px] uppercase tracking-wider text-amber-400 font-bold shrink-0">Ukuran Kertas:</span>
                   <div className="flex flex-wrap gap-1 bg-stone-950 p-1 rounded-xl border border-stone-800">
+                    <button
+                      onClick={() => setPrintPaperSize('200x300')}
+                      title="Ukuran kertas 200 x 300 mm (Default)"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5",
+                        printPaperSize === '200x300'
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      200 x 300 mm
+                    </button>
                     <button
                       onClick={() => setPrintPaperSize('a4')}
                       title="Ukuran kertas standar A4 (210 x 297 mm)"
@@ -2320,27 +2328,29 @@ export default function App() {
                     >
                       A4 (210 x 297 mm)
                     </button>
-                    <button
-                      onClick={() => setPrintPaperSize('200x300')}
-                      title="Ukuran kertas khusus 200 x 300 mm"
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5",
-                        printPaperSize === '200x300'
-                          ? "bg-amber-500 text-stone-950 shadow-md"
-                          : "text-stone-400 hover:text-white"
-                      )}
-                    >
-                      200 x 300 mm
-                    </button>
                   </div>
                 </div>
 
-                {/* Layout Mode Selector (Indonesian instructions) */}
+                {/* Layout Mode Selector */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold shrink-0">Susunan Halaman:</span>
                   <div className="flex flex-wrap gap-1 bg-stone-950 p-1 rounded-xl border border-stone-800">
                     <button
+                      onClick={() => setPrintLayoutMode('side-by-side')}
+                      title="Sisi Kiri Depan & Sisi Kanan Belakang dalam 1 lembar (5 kartu per lembar)"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5",
+                        printLayoutMode === 'side-by-side'
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      <Columns2 size={13} />
+                      Kiri Depan & Kanan Belakang (1 Lembar)
+                    </button>
+                    <button
                       onClick={() => setPrintLayoutMode('all-fronts-first')}
+                      title="Cetak semua sisi depan dahulu pada lembar awal, baru semua sisi belakang"
                       className={cn(
                         "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5",
                         printLayoutMode === 'all-fronts-first'
@@ -2353,6 +2363,7 @@ export default function App() {
                     </button>
                     <button
                       onClick={() => setPrintLayoutMode('interleaved')}
+                      title="Cetak depan dan belakang bergantian per lembar (Duplex)"
                       className={cn(
                         "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5",
                         printLayoutMode === 'interleaved'
@@ -2366,177 +2377,22 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Print Scale Selector (Anti-Cutoff / Exact Size) */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  <span className="text-[10px] uppercase tracking-wider text-amber-400 font-bold shrink-0 flex items-center gap-1">
-                    Skala Ukuran Kartu:
-                  </span>
-                  <div className="flex flex-wrap gap-1 bg-stone-950 p-1 rounded-xl border border-stone-800">
-                    <button
-                      onClick={() => setPrintScale(100)}
-                      title="Skala 100% Presisi Ukuran Standar CR80 (85.6 mm x 54 mm)"
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
-                        printScale === 100
-                          ? "bg-amber-500 text-stone-950 shadow-md"
-                          : "text-stone-400 hover:text-white"
-                      )}
-                    >
-                      100% (Presisi 85.6 x 54 mm)
-                    </button>
-                    <button
-                      onClick={() => setPrintScale(98)}
-                      title="Skala 98% memberikan marjin aman jika printer memotong tepi kertas"
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
-                        printScale === 98
-                          ? "bg-amber-500 text-stone-950 shadow-md"
-                          : "text-stone-400 hover:text-white"
-                      )}
-                    >
-                      98% (SaranPrinterTepi)
-                    </button>
-                    <button
-                      onClick={() => setPrintScale(95)}
-                      title="Skala 95% memberikan marjin ekstra lebar"
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
-                        printScale === 95
-                          ? "bg-amber-500 text-stone-950 shadow-md"
-                          : "text-stone-400 hover:text-white"
-                      )}
-                    >
-                      95% (Marjin Lebar)
-                    </button>
-                  </div>
-                </div>
-
-                {/* Page Margin Selector */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold shrink-0">Marjin Halaman:</span>
-                  <div className="flex flex-wrap gap-1 bg-stone-950 p-1 rounded-xl border border-stone-800">
-                    <button
-                      onClick={() => setPrintMargin(5)}
-                      title="Marjin 5mm atas/bawah paling cocok untuk printer inkjet (Epson/Canon/HP)"
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
-                        printMargin === 5
-                          ? "bg-amber-500 text-stone-950 shadow-md"
-                          : "text-stone-400 hover:text-white"
-                      )}
-                    >
-                      5mm (Aman)
-                    </button>
-                    <button
-                      onClick={() => setPrintMargin(7)}
-                      title="Marjin 7mm ekstra lebar untuk printer dengan batas cetak besar"
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
-                        printMargin === 7
-                          ? "bg-amber-500 text-stone-950 shadow-md"
-                          : "text-stone-400 hover:text-white"
-                      )}
-                    >
-                      7mm (Ekstra Aman)
-                    </button>
-                    <button
-                      onClick={() => setPrintMargin(3)}
-                      title="Marjin 3mm minimal"
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
-                        printMargin === 3
-                          ? "bg-amber-500 text-stone-950 shadow-md"
-                          : "text-stone-400 hover:text-white"
-                      )}
-                    >
-                      3mm (Minimal)
-                    </button>
-                    <button
-                      onClick={() => setPrintMargin(0)}
-                      title="Tanpa marjin halaman"
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
-                        printMargin === 0
-                          ? "bg-amber-500 text-stone-950 shadow-md"
-                          : "text-stone-400 hover:text-white"
-                      )}
-                    >
-                      0mm
-                    </button>
-                  </div>
-                </div>
-
-                {/* Card Gap Selector */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold shrink-0">Jarak Antar Kartu:</span>
-                  <div className="flex flex-wrap gap-1 bg-stone-950 p-1 rounded-xl border border-stone-800">
-                    <button
-                      onClick={() => setPrintGap(0)}
-                      title="Rapat tanpa jarak"
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
-                        printGap === 0
-                          ? "bg-amber-500 text-stone-950 shadow-md"
-                          : "text-stone-400 hover:text-white"
-                      )}
-                    >
-                      0mm (Rapat)
-                    </button>
-                    <button
-                      onClick={() => setPrintGap(1)}
-                      title="Jarak tipis 1mm"
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
-                        printGap === 1
-                          ? "bg-amber-500 text-stone-950 shadow-md"
-                          : "text-stone-400 hover:text-white"
-                      )}
-                    >
-                      1mm
-                    </button>
-                    <button
-                      onClick={() => setPrintGap(2)}
-                      title="Rekomendasi jarak 2mm untuk pemotongan manual"
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
-                        printGap === 2
-                          ? "bg-amber-500 text-stone-950 shadow-md"
-                          : "text-stone-400 hover:text-white"
-                      )}
-                    >
-                      2mm (Saran)
-                    </button>
-                    <button
-                      onClick={() => setPrintGap(3)}
-                      title="Jarak 3mm"
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
-                        printGap === 3
-                          ? "bg-amber-500 text-stone-950 shadow-md"
-                          : "text-stone-400 hover:text-white"
-                      )}
-                    >
-                      3mm
-                    </button>
-                    <button
-                      onClick={() => setPrintGap(4)}
-                      title="Jarak lebar 4mm"
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1",
-                        printGap === 4
-                          ? "bg-amber-500 text-stone-950 shadow-md"
-                          : "text-stone-400 hover:text-white"
-                      )}
-                    >
-                      4mm
-                    </button>
-                  </div>
-                </div>
-
                 {/* Back Side Rotation Selector */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <span className="text-[10px] uppercase tracking-wider text-stone-400 font-bold shrink-0">Rotasi Belakang:</span>
                   <div className="flex flex-wrap gap-1 bg-stone-950 p-1 rounded-xl border border-stone-800">
+                    <button
+                      onClick={() => setPrintBackRotation('90')}
+                      title="Sisi belakang diputar 90 derajat searah jarum jam"
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1",
+                        printBackRotation === '90'
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      90° (Sejajar)
+                    </button>
                     <button
                       onClick={() => setPrintBackRotation('-90')}
                       title="Sisi belakang diputar -90 derajat (Saran untuk cetak duplex bolak-balik standard)"
@@ -2548,18 +2404,6 @@ export default function App() {
                       )}
                     >
                       -90° (Standard)
-                    </button>
-                    <button
-                      onClick={() => setPrintBackRotation('90')}
-                      title="Sisi belakang diputar +90 derajat (Jika hasil cetak terbalik)"
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1",
-                        printBackRotation === '90'
-                          ? "bg-amber-500 text-stone-950 shadow-md"
-                          : "text-stone-400 hover:text-white"
-                      )}
-                    >
-                      90° (Terbalik)
                     </button>
                   </div>
                 </div>
@@ -2596,10 +2440,12 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
                 <span>
-                  <strong>Tips Cetak Presisi 85.6 mm x 54 mm (Standard CR80):</strong> Pilihan Skala telah diset ke <strong>100% (Presisi)</strong>. Pada dialog cetak browser (Ctrl+P / Cmd+P), pastikan atur <strong>Margin: "None" (Tanpa Margin)</strong> dan <strong>Scale: 100% / Default (Tanpa Fit to Printable Area / Sesuaikan Halaman)</strong> agar fisik kartu tercetak tepat 85.6 mm x 54 mm.
+                  <strong>Tips Cetak Presisi 85.6 mm x 54 mm (Standard CR80):</strong> Skala telah diset ke <strong>100% (Presisi)</strong> dan ukuran kertas default <strong>200 x 300 mm</strong>. Pada dialog cetak browser (Ctrl+P / Cmd+P), pastikan atur <strong>Margin: "None" (Tanpa Margin)</strong> dan <strong>Scale: 100% / Default</strong>.
                 </span>
               </div>
-              <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded whitespace-nowrap shrink-0">Mirroring Baris Diaktifkan</span>
+              <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded whitespace-nowrap shrink-0">
+                {printLayoutMode === 'side-by-side' ? 'Tata Letak: Kiri Depan, Kanan Belakang' : 'Mirroring Baris Diaktifkan'}
+              </span>
             </div>
 
             {/* Print Document Container */}
@@ -2681,37 +2527,40 @@ export default function App() {
 // --- Printing View Component ---
 function PrintingView({ 
   umats, 
-  layoutMode = 'all-fronts-first', 
+  layoutMode = 'side-by-side', 
   gap = 2, 
-  backRotation = '-90',
+  backRotation = '90',
   pageMargin = 5,
   printScale = 100,
-  paperSize = 'a4'
+  paperSize = '200x300'
 }: { 
   umats: Umat[], 
-  layoutMode?: 'all-fronts-first' | 'interleaved', 
+  layoutMode?: 'all-fronts-first' | 'interleaved' | 'side-by-side', 
   gap?: number, 
   backRotation?: '-90' | '90',
   pageMargin?: number,
   printScale?: number,
   paperSize?: 'a4' | '200x300'
 }) {
-  // Page dimensions (A4: 210x297mm vs 200x300mm)
+  // Page dimensions (200x300mm default vs A4: 210x297mm)
   const pWidth = paperSize === '200x300' ? 200 : 210;
   const pHeight = paperSize === '200x300' ? 300 : 297;
   const halfWidth = pWidth / 2;
 
-  // Items per page (e.g., 2 columns x 5 rows = 10 ID cards)
-  const batchSize = 10;
+  // Items per page:
+  // For 'side-by-side': 5 umats per page (each row: Left = Front, Right = Back)
+  // For 'all-fronts-first' and 'interleaved': 10 umats per page (2 columns x 5 rows)
+  const isSideBySide = layoutMode === 'side-by-side';
+  const batchSize = isSideBySide ? 5 : 10;
   const batches: Umat[][] = [];
   for (let i = 0; i < umats.length; i += batchSize) {
     batches.push(umats.slice(i, i + batchSize));
   }
 
-  // Helper to pad any batch to exactly 10 items
-  const getPaddedBatch = (batch: Umat[]) => {
+  // Helper to pad any batch
+  const getPaddedBatch = (batch: Umat[], targetSize = 10) => {
     const padded = [...batch];
-    while (padded.length < 10) {
+    while (padded.length < targetSize) {
       padded.push(null as any);
     }
     return padded;
@@ -2893,13 +2742,71 @@ function PrintingView({
         }
       `}</style>
 
-      {layoutMode === 'all-fronts-first' ? (
+      {layoutMode === 'side-by-side' ? (
+        /* Opsi Sisi Kiri Halaman Depan & Sisi Kanan Halaman Belakang (5 Kartu per Lembar) */
+        batches.map((batch, bIndex) => {
+          const padded = getPaddedBatch(batch, 5);
+          return (
+            <div key={`side-by-side-page-${bIndex}`} className="a4-page">
+              <div className="a4-grid">
+                {padded.map((u, rowIdx) => {
+                  if (!u) {
+                    return (
+                      <React.Fragment key={`empty-row-${rowIdx}`}>
+                        <div className="w-[85.6mm] h-[54mm] opacity-0" />
+                        <div className="w-[85.6mm] h-[54mm] opacity-0" />
+                      </React.Fragment>
+                    );
+                  }
+                  return (
+                    <React.Fragment key={`side-pair-${u.id}`}>
+                      {/* Sisi Kiri: Halaman Pertama (Depan) */}
+                      <div className="flex items-center justify-center relative w-[85.6mm] h-[54mm] overflow-hidden">
+                        <div 
+                          className="absolute"
+                          style={{
+                            width: '54mm',
+                            height: '85.6mm',
+                            left: '15.8mm',
+                            top: '-15.8mm',
+                            transform: 'rotate(90deg)',
+                            transformOrigin: 'center center'
+                          }}
+                        >
+                          <IdCard data={u} isFrontOnly forceSmall />
+                        </div>
+                      </div>
+
+                      {/* Sisi Kanan: Halaman Kedua (Belakang) */}
+                      <div className="flex items-center justify-center relative w-[85.6mm] h-[54mm] overflow-hidden">
+                        <div 
+                          className="absolute"
+                          style={{
+                            width: '54mm',
+                            height: '85.6mm',
+                            left: '15.8mm',
+                            top: '-15.8mm',
+                            transform: `rotate(${backRotation === '-90' ? '-90' : '90'}deg)`,
+                            transformOrigin: 'center center'
+                          }}
+                        >
+                          <IdCard data={u} isBackOnly forceSmall />
+                        </div>
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })
+      ) : layoutMode === 'all-fronts-first' ? (
         <>
           {/* Bagian Pertama: Semua Sisi Depan Terlebih Dahulu */}
           {batches.map((batch, bIndex) => (
             <div key={`front-page-${bIndex}`} className="a4-page">
               <div className="a4-grid">
-                {getPaddedBatch(batch).map((u, idx) => {
+                {getPaddedBatch(batch, 10).map((u, idx) => {
                   if (!u) {
                     return <div key={`empty-front-${idx}`} className="w-[85.6mm] h-[54mm] opacity-0" />;
                   }
@@ -2929,7 +2836,7 @@ function PrintingView({
           {batches.map((batch, bIndex) => (
             <div key={`back-page-${bIndex}`} className="a4-page">
               <div className="a4-grid">
-                {getMirroredBackBatch(getPaddedBatch(batch)).map((u, idx) => {
+                {getMirroredBackBatch(getPaddedBatch(batch, 10)).map((u, idx) => {
                   if (!u) {
                     return <div key={`empty-back-${idx}`} className="w-[85.6mm] h-[54mm] opacity-0" />;
                   }
@@ -2962,7 +2869,7 @@ function PrintingView({
             {/* Halaman Depan Batch Ini */}
             <div className="a4-page">
               <div className="a4-grid">
-                {getPaddedBatch(batch).map((u, idx) => {
+                {getPaddedBatch(batch, 10).map((u, idx) => {
                   if (!u) {
                     return <div key={`empty-front-${idx}`} className="w-[85.6mm] h-[54mm] opacity-0" />;
                   }
@@ -2990,7 +2897,7 @@ function PrintingView({
             {/* Halaman Belakang Batch Ini */}
             <div className="a4-page">
               <div className="a4-grid">
-                {getMirroredBackBatch(getPaddedBatch(batch)).map((u, idx) => {
+                {getMirroredBackBatch(getPaddedBatch(batch, 10)).map((u, idx) => {
                   if (!u) {
                     return <div key={`empty-back-${idx}`} className="w-[85.6mm] h-[54mm] opacity-0" />;
                   }
