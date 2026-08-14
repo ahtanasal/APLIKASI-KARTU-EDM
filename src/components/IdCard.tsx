@@ -181,9 +181,8 @@ const getPinyinFallback = (mandarinText: string, currentPinyin: string | undefin
   return (currentPinyin || '').trim().toUpperCase();
 };
 
-const getFittedFontSize = (text: string, baseFontSize: number, maxSpaceWidth: number = 112, minFontSize: number = 3.8): { fontSize: string, letterSpacing: string } => {
-  if (!text) return { fontSize: `${baseFontSize}px`, letterSpacing: 'normal' };
-
+const getEffectiveLength = (text: string): number => {
+  if (!text) return 0;
   let effectiveLen = 0;
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
@@ -199,18 +198,53 @@ const getFittedFontSize = (text: string, baseFontSize: number, maxSpaceWidth: nu
       effectiveLen += 0.28; // Spaces, hyphens, punctuation ~ 0.28em
     }
   }
+  return effectiveLen;
+};
 
+const get2LineSplit = (text: string): { formattedText: string; maxLineEffectiveLen: number } => {
+  if (!text) return { formattedText: '', maxLineEffectiveLen: 0 };
+  const clean = text.trim();
+  const words = clean.split(/\s+/);
+  if (words.length <= 1) {
+    return { formattedText: clean, maxLineEffectiveLen: getEffectiveLength(clean) };
+  }
+
+  const singleLineLen = getEffectiveLength(clean);
+  // If single line effective length <= 6.8, 1 line is already optimal!
+  if (singleLineLen <= 6.8) {
+    return { formattedText: clean, maxLineEffectiveLen: singleLineLen };
+  }
+
+  let minMaxLen = Infinity;
+  let bestSplitIndex = 1;
+  for (let i = 1; i < words.length; i++) {
+    const line1 = words.slice(0, i).join(' ');
+    const line2 = words.slice(i).join(' ');
+    const len1 = getEffectiveLength(line1);
+    const len2 = getEffectiveLength(line2);
+    const maxLen = Math.max(len1, len2);
+    if (maxLen < minMaxLen) {
+      minMaxLen = maxLen;
+      bestSplitIndex = i;
+    }
+  }
+
+  const line1 = words.slice(0, bestSplitIndex).join(' ');
+  const line2 = words.slice(bestSplitIndex).join(' ');
+  return {
+    formattedText: `${line1}\n${line2}`,
+    maxLineEffectiveLen: minMaxLen
+  };
+};
+
+const getFittedFontSizeByLen = (effectiveLen: number, baseFontSize: number, maxSpaceWidth: number = 112, minFontSize: number = 3.8): { fontSize: string, letterSpacing: string } => {
   if (effectiveLen <= 0) return { fontSize: `${baseFontSize}px`, letterSpacing: 'normal' };
 
-  // Calculate estimated width at standard/base font size
   const estimatedWidth = effectiveLen * baseFontSize;
-
-  // If text fits comfortably inside maxSpaceWidth, KEEP the base font size!
   if (estimatedWidth <= maxSpaceWidth) {
     return { fontSize: `${baseFontSize}px`, letterSpacing: 'normal' };
   }
 
-  // Calculate reduced font size to fit inside maxSpaceWidth
   let letterSpacing = 'normal';
   let calculatedSize = maxSpaceWidth / effectiveLen;
 
@@ -230,6 +264,12 @@ const getFittedFontSize = (text: string, baseFontSize: number, maxSpaceWidth: nu
     fontSize: `${finalSize.toFixed(1)}px`,
     letterSpacing
   };
+};
+
+const getFittedFontSize = (text: string, baseFontSize: number, maxSpaceWidth: number = 112, minFontSize: number = 3.8): { fontSize: string, letterSpacing: string } => {
+  if (!text) return { fontSize: `${baseFontSize}px`, letterSpacing: 'normal' };
+  const effectiveLen = getEffectiveLength(text);
+  return getFittedFontSizeByLen(effectiveLen, baseFontSize, maxSpaceWidth, minFontSize);
 };
 
 const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceSmall?: boolean, innerRef?: React.RefObject<HTMLDivElement | null>, settings: CardDesignSettings }) => (
@@ -271,7 +311,7 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
       
       {/* Header */}
       <div className={cn(
-        "flex items-center relative h-[54px] px-1 bg-white/30 backdrop-blur-[1px] rounded-t-sm border-b border-rose-200/40"
+        "flex items-center relative h-[54px] px-1 bg-white/40 rounded-t-sm border-b border-rose-200/40"
       )}>
         {/* Logo container aligned with Label column (30%) */}
         <div className="w-[30%] flex items-center justify-center h-full">
@@ -301,7 +341,7 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
       </div>
 
       {/* Table Content */}
-      <div className="flex-1 flex flex-col mt-1 bg-white/20 backdrop-blur-[1px] rounded-b-sm overflow-hidden border border-rose-100/50">
+      <div className="flex-1 flex flex-col mt-1 bg-white/30 rounded-b-sm overflow-hidden border border-rose-100/50">
         {settings.fields.filter(f => f.show).sort((a, b) => a.order - b.order).map((field, idx, arr) => {
           let value = '';
           let subValue = '';
@@ -334,7 +374,14 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
             } else if (field.id === 'vihara') {
               subValue = getPinyinFallback(data.vihara, data.viharaPinyin);
             } else if (field.id === 'nama') {
-              subValue = getPinyinFallback(data.nama, data.namaPinyin);
+              if (!value) {
+                value = data.namaIndonesia || '';
+              }
+              subValue = getPinyinFallback(data.nama || data.namaIndonesia || '', data.namaPinyin);
+              // Clear duplicate subValue if value is non-Chinese and identical to subValue
+              if (!/[\u4e00-\u9fa5]/.test(value) && subValue.toUpperCase() === value.toUpperCase()) {
+                subValue = '';
+              }
             }
           }
 
@@ -426,7 +473,7 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
           "top-[1%]"
         )}>
           <div className={cn(
-            "flex items-center gap-2 bg-white/60 backdrop-blur-[1px] rounded border border-white/40 whitespace-nowrap px-1.5 py-0.5"
+            "flex items-center gap-2 bg-white/85 rounded border border-white/60 whitespace-nowrap px-1.5 py-0.5"
           )}>
             <p 
               className={cn(
@@ -463,7 +510,7 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
 
       {/* Info and QR Code Positioned dynamically */}
       <div className={cn(
-        "absolute z-30 bg-white/95 backdrop-blur-sm rounded-md flex flex-col items-center p-1 border border-stone-200/80 shadow-[0_1px_1px_rgba(0,0,0,0.03)] w-[56px] overflow-hidden",
+        "absolute z-30 bg-white rounded-md flex flex-col items-center p-1 border border-stone-200 w-[56px] overflow-hidden",
         settings.qrPosition === 'bottom-right' && "bottom-3.5 right-3.5",
         settings.qrPosition === 'bottom-left' && "bottom-3.5 left-3.5",
         settings.qrPosition === 'top-left' && "top-3.5 left-3.5",
@@ -702,10 +749,11 @@ interface TraditionalRowProps {
   isMasehi?: boolean;
   forceSmall?: boolean;
   isSingleLineOnly?: boolean;
+  allow2Lines?: boolean;
 }
 
 const TraditionalRow: React.FC<TraditionalRowProps> = ({ 
-  label, chLabel, value, subValue, fieldId, isLast = false, isCentered = false, isLarge = false, isMasehi = false, forceSmall = false, isSingleLineOnly = true 
+  label, chLabel, value, subValue, fieldId, isLast = false, isCentered = false, isLarge = false, isMasehi = false, forceSmall = false, isSingleLineOnly = true, allow2Lines = false 
 }) => {
   const valLen = value ? value.length : 0;
   const subValLen = subValue ? subValue.length : 0;
@@ -715,6 +763,19 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
 
   const isPandita = fieldId === 'pandita';
 
+  // Determine if this row can wrap value onto 2 lines
+  // (Specifically for nama when it has only Indonesian / Latin name and no subValue)
+  const canUse2Lines = allow2Lines || (fieldId === 'nama' && !hasChineseValue && !subValue);
+
+  let displayValue = value;
+  let effectiveLenForSizing = getEffectiveLength(value);
+
+  if (canUse2Lines && value) {
+    const splitResult = get2LineSplit(value);
+    displayValue = splitResult.formattedText;
+    effectiveLenForSizing = splitResult.maxLineEffectiveLen;
+  }
+
   // Dynamic font sizing: keep standard/large size when text fits, scale down ONLY when text exceeds available space (132px)
   let baseValueSize = 16.5;
   if (isMasehi) {
@@ -723,6 +784,8 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
     baseValueSize = isPandita 
       ? (forceSmall ? 20.0 : 21.5)
       : (forceSmall ? 18.0 : 19.5);
+  } else if (canUse2Lines) {
+    baseValueSize = forceSmall ? 14.0 : 15.0; // Optimal base font size for 2-line Indonesian name
   } else if (isSingleLineOnly || isLarge) {
     baseValueSize = forceSmall ? 17.5 : 18.5;
   } else {
@@ -732,7 +795,7 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
   // Max safe width (px) inside Value box before text needs scaling down
   const maxSpaceWidth = forceSmall ? 110 : 118;
 
-  const valueFitting = getFittedFontSize(value, baseValueSize, maxSpaceWidth, 3.8);
+  const valueFitting = getFittedFontSizeByLen(effectiveLenForSizing, baseValueSize, maxSpaceWidth, 3.8);
   const dynamicValueFontSize = valueFitting.fontSize;
   const dynamicValueLetterSpacing = valueFitting.letterSpacing;
 
@@ -782,7 +845,8 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
       <div className={cn("flex-1 flex flex-col justify-center min-w-0 bg-white/10", forceSmall ? "px-1 py-0" : "px-1.5 py-0.5")}>
         <p 
           className={cn(
-            "text-black leading-tight uppercase animate-fade-in font-normal whitespace-nowrap overflow-hidden",
+            "text-black font-normal uppercase animate-fade-in overflow-hidden",
+            canUse2Lines ? "whitespace-pre-line leading-[1.12]" : "whitespace-nowrap leading-tight",
             hasChineseValue ? "font-dfkai" : "font-sans",
             isCentered && "text-center"
           )}
@@ -792,7 +856,7 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
             letterSpacing: dynamicValueLetterSpacing !== 'normal' ? dynamicValueLetterSpacing : (isMasehi && valLen > 10 ? '-0.02em' : 'normal')
           }}
         >
-          {value || '-'}
+          {displayValue || '-'}
         </p>
         {subValue && (
           <p 
