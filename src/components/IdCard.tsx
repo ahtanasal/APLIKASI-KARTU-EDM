@@ -318,8 +318,8 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
           <img src="/images/front_logo.png" alt="Logo" className="w-[48px] h-[48px] object-contain opacity-95" />
         </div>
         {/* Text container aligned with Value column (70%) */}
-        <div className="flex-1 flex items-center justify-center h-full px-1.5">
-          <div className="w-full grid grid-cols-4 gap-0 text-center items-center">
+        <div className="flex-1 flex items-center justify-center h-full pl-1 pr-2">
+          <div className="w-full flex items-center justify-between">
             <div className="flex flex-col items-center justify-center">
               <span className="font-dfkai text-rose-950 text-[24px] leading-none font-normal">發</span>
               <span className="font-sans font-medium text-rose-900 text-[11.4px] leading-none uppercase mt-0.5 tracking-tight">FA</span>
@@ -330,7 +330,7 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
             </div>
             <div className="flex flex-col items-center justify-center">
               <span className="font-dfkai text-rose-950 text-[24px] leading-none font-normal">崇</span>
-              <span className="font-sans font-medium text-rose-900 text-[11.4px] leading-none uppercase mt-0.5 tracking-tight">CHONG</span>
+              <span className="font-sans font-medium text-rose-900 text-[11.4px] leading-none uppercase mt-0.5 tracking-tighter">CHONG</span>
             </div>
             <div className="flex flex-col items-center justify-center">
               <span className="font-dfkai text-rose-950 text-[24px] leading-none font-normal">德</span>
