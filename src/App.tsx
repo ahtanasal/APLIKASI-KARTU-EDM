@@ -176,8 +176,15 @@ const formatPanditaName = (name: string): string => {
 // Helper to format Pandita Pinyin -> PANDITA + [Nama Pinyin]
 const formatPanditaPinyin = (pinyin: string): string => {
   if (!pinyin) return "";
-  const cleanPinyin = pinyin.replace(/\bPANDITA\b/gi, "").replace(/\s+/g, " ").trim();
+  let cleanPinyin = pinyin.replace(/\bPANDITA\b/gi, "").replace(/\s+/g, " ").trim();
   if (!cleanPinyin) return "";
+  cleanPinyin = cleanPinyin
+    .replace(/lim\s*pi\s*lien/gi, 'LIN BIN LIAN')
+    .replace(/lin\s*bi\s*lien/gi, 'LIN BIN LIAN')
+    .replace(/lin\s*bin\s*lien/gi, 'LIN BIN LIAN')
+    .replace(/lin\s*bi\s*lian/gi, 'LIN BIN LIAN')
+    .replace(/zhang\s*cen\s*chiu/gi, 'ZHANG ZHEN QIU')
+    .replace(/xi\s*ma\s*yen/gi, 'XU MA YUAN');
   return `PANDITA ${cleanPinyin}`.toUpperCase();
 };
 
@@ -417,7 +424,15 @@ export default function App() {
         try {
           const parsed = JSON.parse(localSaved);
           if (Array.isArray(parsed)) {
-            setUmats(parsed);
+            const updated = parsed.map((item: any) => {
+              if (item.panditaPinyin) {
+                item.panditaPinyin = formatPanditaPinyin(item.panditaPinyin);
+              } else if (item.pandita && /碧蓮|林.*碧蓮/.test(item.pandita)) {
+                item.panditaPinyin = 'PANDITA LIN BIN LIAN';
+              }
+              return item;
+            });
+            setUmats(updated);
           }
         } catch (e) {}
       }
@@ -445,20 +460,17 @@ export default function App() {
     const loadLocalPanditasFallback = () => {
       const localSaved = localStorage.getItem('edm_master_panditas');
       let initial = [
-        { name: '林點傳師碧蓮', pinyin: 'Pandita LIN BI LIEN' },
-        { name: '張點傳師珍球', pinyin: 'Pandita ZHANG ZHEN QIU' },
-        { name: '許點傳師媽源', pinyin: 'Pandita XU MA YUAN' }
+        { name: '林碧蓮點傳師', pinyin: 'PANDITA LIN BIN LIAN' },
+        { name: '張珍球點傳師', pinyin: 'PANDITA ZHANG ZHEN QIU' },
+        { name: '許媽源點傳師', pinyin: 'PANDITA XU MA YUAN' }
       ];
       if (localSaved) {
         try {
           const parsed = JSON.parse(localSaved);
           if (Array.isArray(parsed) && parsed.length > 0) {
             initial = parsed.map((p: any) => ({
-              ...p,
-              pinyin: (p.pinyin || '')
-                .replace(/lim\s*pi\s*lien/gi, 'LIN BI LIEN')
-                .replace(/zhang\s*cen\s*chiu/gi, 'ZHANG ZHEN QIU')
-                .replace(/xi\s*ma\s*yen/gi, 'XU MA YUAN')
+              name: formatPanditaName(p.name),
+              pinyin: formatPanditaPinyin(p.pinyin)
             }));
           }
         } catch (e) {}
@@ -469,13 +481,23 @@ export default function App() {
     // 1. Sync Umats from Firestore in real-time
     const unsubscribeUmats = onSnapshot(collection(db, 'umats'), (snapshot) => {
       const list: Umat[] = [];
-      snapshot.forEach((doc) => {
-        const item = doc.data() as Umat;
+      snapshot.forEach((docSnap) => {
+        const item = docSnap.data() as Umat;
+        let needsUpdate = false;
         if (item.panditaPinyin) {
-          item.panditaPinyin = item.panditaPinyin
-            .replace(/lim\s*pi\s*lien/gi, 'LIN BI LIEN')
-            .replace(/zhang\s*cen\s*chiu/gi, 'ZHANG ZHEN QIU')
-            .replace(/xi\s*ma\s*yen/gi, 'XU MA YUAN');
+          const updatedPPinyin = formatPanditaPinyin(item.panditaPinyin);
+          if (updatedPPinyin !== item.panditaPinyin) {
+            item.panditaPinyin = updatedPPinyin;
+            needsUpdate = true;
+          }
+        } else if (item.pandita && /碧蓮|林.*碧蓮/.test(item.pandita)) {
+          item.panditaPinyin = 'PANDITA LIN BIN LIAN';
+          needsUpdate = true;
+        }
+        if (needsUpdate) {
+          try {
+            setDoc(doc(db, 'umats', item.id), { panditaPinyin: item.panditaPinyin }, { merge: true }).catch(console.error);
+          } catch (err) {}
         }
         list.push(item);
       });
@@ -584,7 +606,7 @@ export default function App() {
         // Fallback to local storage or defaults, then seed
         const localSaved = localStorage.getItem('edm_master_panditas');
         let initial = [
-          { name: '林碧蓮點傳師', pinyin: 'PANDITA LIN BI LIEN' },
+          { name: '林碧蓮點傳師', pinyin: 'PANDITA LIN BIN LIAN' },
           { name: '張珍球點傳師', pinyin: 'PANDITA ZHANG ZHEN QIU' },
           { name: '許媽源點傳師', pinyin: 'PANDITA XU MA YUAN' }
         ];
