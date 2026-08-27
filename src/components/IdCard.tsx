@@ -277,8 +277,8 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
   <div
     ref={innerRef}
     style={{ 
-      width: '56.7mm', 
-      height: '89.88mm',
+      width: '56.13mm', 
+      height: '88.98mm',
       backgroundImage: `url(${settings.frontBg})`,
       backgroundSize: '100%',
       backgroundPosition: 'center 55%',
@@ -286,7 +286,7 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
       colorScheme: 'light',
       boxSizing: 'border-box',
       imageRendering: 'high-quality',
-      borderRadius: '3.3mm',
+      borderRadius: '3.27mm',
     }}
     className={cn(
       "relative bg-[#fff1f2] overflow-hidden border-[2px] border-rose-400 text-slate-900 select-none box-border id-card-output",
@@ -298,7 +298,7 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
       className="absolute inset-0 z-0" 
       style={{ 
         background: 'linear-gradient(to bottom, rgba(255, 241, 242, 0.75), rgba(255, 241, 242, 0.90))',
-        borderRadius: '3.3mm',
+        borderRadius: '3.27mm',
       }}
     />
 
@@ -307,7 +307,7 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
         "h-full flex flex-col relative z-20",
         "p-1.5"
       )}
-      style={{ borderRadius: '3mm' }}
+      style={{ borderRadius: '2.97mm' }}
     >
       
       {/* Header */}
@@ -429,56 +429,42 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
   <div
     ref={innerRef}
     style={{ 
-      width: '56.7mm', 
-      height: '89.88mm',
+      width: '56.13mm', 
+      height: '88.98mm',
       colorScheme: 'light',
       boxSizing: 'border-box',
       imageRendering: 'high-quality',
-      borderRadius: '3.3mm',
+      borderRadius: '3.27mm',
+      backgroundImage: `url(${settings.backBg})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
     }}
     className={cn(
-      "relative bg-[#fff1f2] overflow-hidden border-[2px] border-rose-400 text-slate-900 select-none box-border id-card-output",
+      "relative bg-[#fff1f2] overflow-hidden text-slate-900 select-none box-border id-card-output",
       !forceSmall && "shadow-md"
     )}
   >
-    {/* Elegant Rose Overlay for consistency and readability */}
-    <div 
-      className="absolute inset-0 z-0" 
-      style={{ 
-        background: 'linear-gradient(to bottom, rgba(255, 241, 242, 0.5), rgba(255, 241, 242, 0.7))',
-        borderRadius: '3.3mm',
-      }}
+    {/* Full-bleed illustration image covering 100% of the entire card frame */}
+    <img 
+      src={settings.backBg} 
+      alt="Back Background" 
+      className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+      style={{ imageRendering: 'high-quality' }}
     />
 
     <div 
-      className={cn(
-        "h-full flex flex-col relative z-20",
-        "p-1.5"
-      )}
-      style={{ borderRadius: '3mm' }}
+      className="h-full w-full flex flex-col relative z-20"
+      style={{ borderRadius: '3.27mm' }}
     >
-      <div 
-        className="absolute inset-0 -z-20 bg-[#fff1f2]"
-        style={{
-          backgroundImage: `url(${settings.backBg})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          opacity: 0.85,
-          filter: forceSmall ? 'none' : 'saturate(0.7) contrast(1.05) brightness(1.05)',
-          imageRendering: 'high-quality',
-        }}
-      />
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white/20 via-transparent to-white/30" />
-
       {/* Dynamic Name on Back if enabled */}
       {settings.showNameOnBack && (
         <div className={cn(
           "absolute left-0 right-0 z-30 flex justify-center px-4",
-          "top-[1%]"
+          "top-[2%]"
         )}>
           <div className={cn(
-            "flex items-center gap-2 bg-white/85 rounded border border-white/60 whitespace-nowrap px-1.5 py-0.5"
+            "flex items-center gap-2 bg-white/90 rounded border border-white/70 shadow-sm whitespace-nowrap px-2 py-0.5"
           )}>
             <p 
               className={cn(
@@ -515,7 +501,7 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
 
       {/* Info and QR Code Positioned dynamically */}
       <div className={cn(
-        "absolute z-30 bg-white rounded-md flex flex-col items-center p-1 border border-stone-200 w-[56px] overflow-hidden",
+        "absolute z-30 bg-white rounded-md flex flex-col items-center p-1 border border-stone-200/90 shadow-md w-[56px] overflow-hidden",
         settings.qrPosition === 'bottom-right' && "bottom-3.5 right-3.5",
         settings.qrPosition === 'bottom-left' && "bottom-3.5 left-3.5",
         settings.qrPosition === 'top-left' && "top-3.5 left-3.5",
