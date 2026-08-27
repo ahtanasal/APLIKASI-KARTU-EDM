@@ -769,8 +769,11 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
 
   // Dynamic font sizing: keep standard/large size when text fits, scale down ONLY when text exceeds available space (132px)
   let baseValueSize = 16.5;
-  if (isMasehi) {
-    baseValueSize = forceSmall ? 14.5 : 15.5;
+  if (isMasehi && hasChineseValue) {
+    // Enlarge Mandarin lunar date significantly, fitting securely within the cell bounds
+    baseValueSize = forceSmall ? 17.5 : 18.5;
+  } else if (isMasehi) {
+    baseValueSize = forceSmall ? 15.0 : 16.0;
   } else if (hasChineseValue) {
     baseValueSize = isPandita 
       ? (forceSmall ? 20.0 : 21.5)
@@ -784,7 +787,9 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
   }
 
   // Max safe width (px) inside Value box before text needs scaling down
-  const maxSpaceWidth = forceSmall ? 110 : 118;
+  const maxSpaceWidth = isMasehi 
+    ? (forceSmall ? 122 : 128)
+    : (forceSmall ? 112 : 120);
 
   const valueFitting = getFittedFontSizeByLen(effectiveLenForSizing, baseValueSize, maxSpaceWidth, 3.8);
   const dynamicValueFontSize = valueFitting.fontSize;
@@ -792,7 +797,9 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
 
   // Dynamic font sizing for subValue (Indonesian / Latin text on the right side)
   let baseSubValueSize = forceSmall ? 12.5 : 13.5;
-  if (hasChineseSubValue) {
+  if (isMasehi) {
+    baseSubValueSize = forceSmall ? 10.5 : 11.5;
+  } else if (hasChineseSubValue) {
     baseSubValueSize = forceSmall ? 13.5 : 14.5;
   }
 
@@ -837,7 +844,7 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
         <p 
           className={cn(
             "text-black font-normal uppercase animate-fade-in overflow-hidden",
-            canUse2Lines ? "whitespace-pre-line leading-[1.12]" : "whitespace-nowrap leading-tight",
+            canUse2Lines ? "whitespace-pre-line leading-[1.12]" : isMasehi ? "whitespace-nowrap leading-tight" : "whitespace-nowrap leading-tight",
             hasChineseValue ? "font-dfkai" : "font-sans",
             isCentered && "text-center"
           )}
@@ -852,10 +859,11 @@ const TraditionalRow: React.FC<TraditionalRowProps> = ({
         {subValue && (
           <p 
             className={cn(
-              "text-black leading-tight uppercase animate-fade-in font-normal whitespace-nowrap overflow-hidden",
+              "text-black uppercase animate-fade-in font-normal whitespace-nowrap overflow-hidden",
+              isMasehi ? "leading-none mt-0.5" : "leading-tight",
               hasChineseSubValue ? "font-dfkai" : "font-sans",
               isCentered && "text-center",
-              forceSmall ? "mt-0" : "mt-0.5"
+              !isMasehi && (forceSmall ? "mt-0" : "mt-0.5")
             )}
             style={{ 
               fontSize: dynamicSubValueFontSize, 
