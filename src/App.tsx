@@ -36,6 +36,7 @@ import {
   RefreshCw,
   Columns2,
   Edit,
+  FlipHorizontal,
   LogOut,
   Shield,
   UserCheck,
@@ -284,6 +285,7 @@ export default function App() {
   const [printScale, setPrintScale] = useState<number>(100);
   const [printBackRotation, setPrintBackRotation] = useState<'-90' | '90'>('90');
   const [printPaperSize, setPrintPaperSize] = useState<'a4' | '200x300'>('200x300');
+  const [printMirrorMode, setPrintMirrorMode] = useState<'none' | 'all' | 'front' | 'back'>('none');
   const [editingUmat, setEditingUmat] = useState<Umat | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [jabatanFilter, setJabatanFilter] = useState<string>('all');
@@ -2427,6 +2429,64 @@ export default function App() {
                     </button>
                   </div>
                 </div>
+
+                {/* Mirror Image Selector */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <span className="text-[10px] uppercase tracking-wider text-amber-400 font-bold shrink-0 flex items-center gap-1">
+                    <FlipHorizontal size={12} />
+                    Mirror Image:
+                  </span>
+                  <div className="flex flex-wrap gap-1 bg-stone-950 p-1 rounded-xl border border-stone-800">
+                    <button
+                      onClick={() => setPrintMirrorMode('none')}
+                      title="Normal (Tanpa Mirror)"
+                      className={cn(
+                        "px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all",
+                        printMirrorMode === 'none'
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      Normal
+                    </button>
+                    <button
+                      onClick={() => setPrintMirrorMode('all')}
+                      title="Mirror Sisi Depan dan Sisi Belakang (Semua)"
+                      className={cn(
+                        "px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all",
+                        printMirrorMode === 'all'
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      Semua
+                    </button>
+                    <button
+                      onClick={() => setPrintMirrorMode('front')}
+                      title="Mirror Sisi Depan Saja"
+                      className={cn(
+                        "px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all",
+                        printMirrorMode === 'front'
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      Depan Saja
+                    </button>
+                    <button
+                      onClick={() => setPrintMirrorMode('back')}
+                      title="Mirror Sisi Belakang Saja"
+                      className={cn(
+                        "px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all",
+                        printMirrorMode === 'back'
+                          ? "bg-amber-500 text-stone-950 shadow-md"
+                          : "text-stone-400 hover:text-white"
+                      )}
+                    >
+                      Belakang Saja
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Action buttons */}
@@ -2463,14 +2523,22 @@ export default function App() {
                   <strong>Tips Cetak Kartu (88.09 mm x 55.57 mm):</strong> Ukuran kartu telah disesuaikan presisi -1% agar tidak terpotong saat print bulk. Pada dialog cetak browser (Ctrl+P / Cmd+P), atur <strong>Margin: "None" (Tanpa Margin)</strong> dan <strong>Scale: 100% / Default</strong>.
                 </span>
               </div>
-              <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded whitespace-nowrap shrink-0">
-                {printLayoutMode === 'side-by-side' ? 'Tata Letak: Kiri Depan, Kanan Belakang' : 'Mirroring Baris Diaktifkan'}
-              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                {printMirrorMode !== 'none' && (
+                  <span className="text-[10px] bg-amber-500 text-stone-950 font-extrabold px-2 py-0.5 rounded uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                    <FlipHorizontal size={11} />
+                    Mirror: {printMirrorMode === 'all' ? 'Depan & Belakang' : printMirrorMode === 'front' ? 'Depan' : 'Belakang'}
+                  </span>
+                )}
+                <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded whitespace-nowrap">
+                  {printLayoutMode === 'side-by-side' ? 'Tata Letak: Kiri Depan, Kanan Belakang' : 'Mirroring Baris Diaktifkan'}
+                </span>
+              </div>
             </div>
 
             {/* Print Document Container */}
             <div ref={printContainerRef} className="py-8 print:py-0 w-full flex justify-center">
-              <PrintingView umats={umats.filter(u => selectedIds.has(u.id))} layoutMode={printLayoutMode} gap={printGap} backRotation={printBackRotation} pageMargin={printMargin} printScale={printScale} paperSize={printPaperSize} />
+              <PrintingView umats={umats.filter(u => selectedIds.has(u.id))} layoutMode={printLayoutMode} gap={printGap} backRotation={printBackRotation} pageMargin={printMargin} printScale={printScale} paperSize={printPaperSize} mirrorMode={printMirrorMode} />
             </div>
           </div>
         )}
@@ -2552,7 +2620,8 @@ function PrintingView({
   backRotation = '90',
   pageMargin = 5,
   printScale = 100,
-  paperSize = '200x300'
+  paperSize = '200x300',
+  mirrorMode = 'none'
 }: { 
   umats: Umat[], 
   layoutMode?: 'all-fronts-first' | 'interleaved' | 'side-by-side', 
@@ -2560,8 +2629,12 @@ function PrintingView({
   backRotation?: '-90' | '90',
   pageMargin?: number,
   printScale?: number,
-  paperSize?: 'a4' | '200x300'
+  paperSize?: 'a4' | '200x300',
+  mirrorMode?: 'none' | 'all' | 'front' | 'back'
 }) {
+  const isFrontMirrored = mirrorMode === 'all' || mirrorMode === 'front';
+  const isBackMirrored = mirrorMode === 'all' || mirrorMode === 'back';
+
   // Page dimensions (200x300mm default vs A4: 210x297mm)
   const pWidth = paperSize === '200x300' ? 200 : 210;
   const pHeight = paperSize === '200x300' ? 300 : 297;
@@ -2789,7 +2862,7 @@ function PrintingView({
                             height: '88.09mm',
                             left: '16.26mm',
                             top: '-16.26mm',
-                            transform: 'rotate(90deg)',
+                            transform: isFrontMirrored ? 'rotate(90deg) scaleX(-1)' : 'rotate(90deg)',
                             transformOrigin: 'center center'
                           }}
                         >
@@ -2806,7 +2879,9 @@ function PrintingView({
                             height: '88.09mm',
                             left: '16.26mm',
                             top: '-16.26mm',
-                            transform: `rotate(${backRotation === '-90' ? '-90' : '90'}deg)`,
+                            transform: isBackMirrored 
+                              ? (backRotation === '-90' ? 'rotate(-90deg) scaleX(-1)' : 'rotate(90deg) scaleX(-1)')
+                              : (backRotation === '-90' ? 'rotate(-90deg)' : 'rotate(90deg)'),
                             transformOrigin: 'center center'
                           }}
                         >
@@ -2839,7 +2914,7 @@ function PrintingView({
                           height: '88.09mm',
                           left: '16.26mm',
                           top: '-16.26mm',
-                          transform: 'rotate(90deg)',
+                          transform: isFrontMirrored ? 'rotate(90deg) scaleX(-1)' : 'rotate(90deg)',
                           transformOrigin: 'center center'
                         }}
                       >
@@ -2869,7 +2944,9 @@ function PrintingView({
                           height: '88.09mm',
                           left: '16.26mm',
                           top: '-16.26mm',
-                          transform: `rotate(${backRotation === '90' ? '90' : '-90'}deg)`,
+                          transform: isBackMirrored
+                            ? (backRotation === '90' ? 'rotate(90deg) scaleX(-1)' : 'rotate(-90deg) scaleX(-1)')
+                            : (backRotation === '90' ? 'rotate(90deg)' : 'rotate(-90deg)'),
                           transformOrigin: 'center center'
                         }}
                       >
@@ -2902,7 +2979,7 @@ function PrintingView({
                           height: '88.09mm',
                           left: '16.26mm',
                           top: '-16.26mm',
-                          transform: 'rotate(90deg)',
+                          transform: isFrontMirrored ? 'rotate(90deg) scaleX(-1)' : 'rotate(90deg)',
                           transformOrigin: 'center center'
                         }}
                       >
@@ -2930,7 +3007,9 @@ function PrintingView({
                           height: '88.09mm',
                           left: '16.26mm',
                           top: '-16.26mm',
-                          transform: `rotate(${backRotation === '90' ? '90' : '-90'}deg)`,
+                          transform: isBackMirrored
+                            ? (backRotation === '90' ? 'rotate(90deg) scaleX(-1)' : 'rotate(-90deg) scaleX(-1)')
+                            : (backRotation === '90' ? 'rotate(90deg)' : 'rotate(-90deg)'),
                           transformOrigin: 'center center'
                         }}
                       >
