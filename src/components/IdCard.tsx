@@ -277,8 +277,8 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
   <div
     ref={innerRef}
     style={{ 
-      width: '56.13mm', 
-      height: '88.98mm',
+      width: '55.57mm', 
+      height: '88.09mm',
       backgroundImage: `url(${settings.frontBg})`,
       backgroundSize: '100%',
       backgroundPosition: 'center 55%',
@@ -286,7 +286,7 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
       colorScheme: 'light',
       boxSizing: 'border-box',
       imageRendering: 'high-quality',
-      borderRadius: '3.27mm',
+      borderRadius: '3.24mm',
     }}
     className={cn(
       "relative bg-[#fff1f2] overflow-hidden border-[2px] border-rose-400 text-slate-900 select-none box-border id-card-output",
@@ -298,7 +298,7 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
       className="absolute inset-0 z-0" 
       style={{ 
         background: 'linear-gradient(to bottom, rgba(255, 241, 242, 0.75), rgba(255, 241, 242, 0.90))',
-        borderRadius: '3.27mm',
+        borderRadius: '3.24mm',
       }}
     />
 
@@ -307,7 +307,7 @@ const FrontSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, force
         "h-full flex flex-col relative z-20",
         "p-1.5"
       )}
-      style={{ borderRadius: '2.97mm' }}
+      style={{ borderRadius: '2.94mm' }}
     >
       
       {/* Header */}
@@ -429,19 +429,19 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
   <div
     ref={innerRef}
     style={{ 
-      width: '56.13mm', 
-      height: '88.98mm',
+      width: '55.57mm', 
+      height: '88.09mm',
       colorScheme: 'light',
       boxSizing: 'border-box',
       imageRendering: 'high-quality',
-      borderRadius: '3.27mm',
+      borderRadius: '3.24mm',
       backgroundImage: `url(${settings.backBg})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat',
     }}
     className={cn(
-      "relative bg-[#fff1f2] overflow-hidden text-slate-900 select-none box-border id-card-output",
+      "relative bg-[#fff1f2] overflow-hidden border-[2px] border-rose-400 text-slate-900 select-none box-border id-card-output",
       !forceSmall && "shadow-md"
     )}
   >
@@ -455,7 +455,7 @@ const BackSide = ({ data, forceSmall, innerRef, settings }: { data: Umat, forceS
 
     <div 
       className="h-full w-full flex flex-col relative z-20"
-      style={{ borderRadius: '3.27mm' }}
+      style={{ borderRadius: '2.94mm' }}
     >
       {/* Dynamic Name on Back if enabled */}
       {settings.showNameOnBack && (

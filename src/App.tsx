@@ -2460,7 +2460,7 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
                 <span>
-                  <strong>Tips Cetak Kartu (88.98 mm x 56.13 mm):</strong> Ukuran kartu telah disesuaikan -1% agar tidak terpotong saat print bulk. Pada dialog cetak browser (Ctrl+P / Cmd+P), atur <strong>Margin: "None" (Tanpa Margin)</strong> dan <strong>Scale: 100% / Default</strong>.
+                  <strong>Tips Cetak Kartu (88.09 mm x 55.57 mm):</strong> Ukuran kartu telah disesuaikan presisi -1% agar tidak terpotong saat print bulk. Pada dialog cetak browser (Ctrl+P / Cmd+P), atur <strong>Margin: "None" (Tanpa Margin)</strong> dan <strong>Scale: 100% / Default</strong>.
                 </span>
               </div>
               <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded whitespace-nowrap shrink-0">
@@ -2598,8 +2598,8 @@ function PrintingView({
   };
 
   // Safe vertical gap math ensuring top/bottom pageMargin are strictly respected
-  // Total page height = pHeight mm. Card grid height = 280.67mm (5 * 56.13mm).
-  const maxGap = Math.max(0, (pHeight - 280.67 - (2 * pageMargin)) / 4);
+  // Total page height = pHeight mm. Card grid height = 277.85mm (5 * 55.57mm).
+  const maxGap = Math.max(0, (pHeight - 277.85 - (2 * pageMargin)) / 4);
   const safeGap = Math.min(gap, maxGap);
 
   return (
@@ -2713,7 +2713,7 @@ function PrintingView({
           display: grid;
           width: ${pWidth}mm;
           grid-template-columns: ${halfWidth}mm ${halfWidth}mm;
-          grid-template-rows: repeat(5, 56.13mm);
+          grid-template-rows: repeat(5, 55.57mm);
           row-gap: ${safeGap}mm;
           column-gap: 0mm;
           justify-items: center;
@@ -2773,22 +2773,22 @@ function PrintingView({
                   if (!u) {
                     return (
                       <React.Fragment key={`empty-row-${rowIdx}`}>
-                        <div className="w-[88.98mm] h-[56.13mm] opacity-0" />
-                        <div className="w-[88.98mm] h-[56.13mm] opacity-0" />
+                        <div className="w-[88.09mm] h-[55.57mm] opacity-0" />
+                        <div className="w-[88.09mm] h-[55.57mm] opacity-0" />
                       </React.Fragment>
                     );
                   }
                   return (
                     <React.Fragment key={`side-pair-${u.id}`}>
                       {/* Sisi Kiri: Halaman Pertama (Depan) */}
-                      <div className="flex items-center justify-center relative w-[88.98mm] h-[56.13mm] overflow-hidden">
+                      <div className="flex items-center justify-center relative w-[88.09mm] h-[55.57mm] overflow-hidden">
                         <div 
                           className="absolute"
                           style={{
-                            width: '56.13mm',
-                            height: '88.98mm',
-                            left: '16.425mm',
-                            top: '-16.425mm',
+                            width: '55.57mm',
+                            height: '88.09mm',
+                            left: '16.26mm',
+                            top: '-16.26mm',
                             transform: 'rotate(90deg)',
                             transformOrigin: 'center center'
                           }}
@@ -2798,14 +2798,14 @@ function PrintingView({
                       </div>
 
                       {/* Sisi Kanan: Halaman Kedua (Belakang) */}
-                      <div className="flex items-center justify-center relative w-[88.98mm] h-[56.13mm] overflow-hidden">
+                      <div className="flex items-center justify-center relative w-[88.09mm] h-[55.57mm] overflow-hidden">
                         <div 
                           className="absolute"
                           style={{
-                            width: '56.13mm',
-                            height: '88.98mm',
-                            left: '16.425mm',
-                            top: '-16.425mm',
+                            width: '55.57mm',
+                            height: '88.09mm',
+                            left: '16.26mm',
+                            top: '-16.26mm',
                             transform: `rotate(${backRotation === '-90' ? '-90' : '90'}deg)`,
                             transformOrigin: 'center center'
                           }}
@@ -2828,17 +2828,17 @@ function PrintingView({
               <div className="a4-grid">
                 {getPaddedBatch(batch, 10).map((u, idx) => {
                   if (!u) {
-                    return <div key={`empty-front-${idx}`} className="w-[88.98mm] h-[56.13mm] opacity-0" />;
+                    return <div key={`empty-front-${idx}`} className="w-[88.09mm] h-[55.57mm] opacity-0" />;
                   }
                   return (
-                    <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[88.98mm] h-[56.13mm] overflow-hidden">
+                    <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[88.09mm] h-[55.57mm] overflow-hidden">
                       <div 
                         className="absolute"
                         style={{
-                          width: '56.13mm',
-                          height: '88.98mm',
-                          left: '16.425mm',
-                          top: '-16.425mm',
+                          width: '55.57mm',
+                          height: '88.09mm',
+                          left: '16.26mm',
+                          top: '-16.26mm',
                           transform: 'rotate(90deg)',
                           transformOrigin: 'center center'
                         }}
@@ -2858,17 +2858,17 @@ function PrintingView({
               <div className="a4-grid">
                 {getMirroredBackBatch(getPaddedBatch(batch, 10)).map((u, idx) => {
                   if (!u) {
-                    return <div key={`empty-back-${idx}`} className="w-[88.98mm] h-[56.13mm] opacity-0" />;
+                    return <div key={`empty-back-${idx}`} className="w-[88.09mm] h-[55.57mm] opacity-0" />;
                   }
                   return (
-                    <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[88.98mm] h-[56.13mm] overflow-hidden">
+                    <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[88.09mm] h-[55.57mm] overflow-hidden">
                       <div 
                         className="absolute"
                         style={{
-                          width: '56.13mm',
-                          height: '88.98mm',
-                          left: '16.425mm',
-                          top: '-16.425mm',
+                          width: '55.57mm',
+                          height: '88.09mm',
+                          left: '16.26mm',
+                          top: '-16.26mm',
                           transform: `rotate(${backRotation === '90' ? '90' : '-90'}deg)`,
                           transformOrigin: 'center center'
                         }}
@@ -2891,17 +2891,17 @@ function PrintingView({
               <div className="a4-grid">
                 {getPaddedBatch(batch, 10).map((u, idx) => {
                   if (!u) {
-                    return <div key={`empty-front-${idx}`} className="w-[88.98mm] h-[56.13mm] opacity-0" />;
+                    return <div key={`empty-front-${idx}`} className="w-[88.09mm] h-[55.57mm] opacity-0" />;
                   }
                   return (
-                    <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[88.98mm] h-[56.13mm] overflow-hidden">
+                    <div key={`front-${u.id}`} className="flex items-center justify-center relative w-[88.09mm] h-[55.57mm] overflow-hidden">
                       <div 
                         className="absolute"
                         style={{
-                          width: '56.13mm',
-                          height: '88.98mm',
-                          left: '16.425mm',
-                          top: '-16.425mm',
+                          width: '55.57mm',
+                          height: '88.09mm',
+                          left: '16.26mm',
+                          top: '-16.26mm',
                           transform: 'rotate(90deg)',
                           transformOrigin: 'center center'
                         }}
@@ -2919,17 +2919,17 @@ function PrintingView({
               <div className="a4-grid">
                 {getMirroredBackBatch(getPaddedBatch(batch, 10)).map((u, idx) => {
                   if (!u) {
-                    return <div key={`empty-back-${idx}`} className="w-[88.98mm] h-[56.13mm] opacity-0" />;
+                    return <div key={`empty-back-${idx}`} className="w-[88.09mm] h-[55.57mm] opacity-0" />;
                   }
                   return (
-                    <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[88.98mm] h-[56.13mm] overflow-hidden">
+                    <div key={`back-${u.id}`} className="flex items-center justify-center relative w-[88.09mm] h-[55.57mm] overflow-hidden">
                       <div 
                         className="absolute"
                         style={{
-                          width: '56.13mm',
-                          height: '88.98mm',
-                          left: '16.425mm',
-                          top: '-16.425mm',
+                          width: '55.57mm',
+                          height: '88.09mm',
+                          left: '16.26mm',
+                          top: '-16.26mm',
                           transform: `rotate(${backRotation === '90' ? '90' : '-90'}deg)`,
                           transformOrigin: 'center center'
                         }}
